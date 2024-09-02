@@ -1,0 +1,1033 @@
+ **************** MCFM - version 10.3 ***************
+ *                                                  *
+ *  MCFM, v10.3                     January 2023    *
+ *  CuTe-MCFM, v1.2                                 *
+ *                                                  *
+ *  On the web: https://mcfm.fnal.gov/              *
+ *                                                  *
+ *  MCFM Authors:                                   *
+ *                                                  *
+ *   John Campbell <johnmc@fnal.gov>                *
+ *   Keith Ellis <ellis@fnal.gov>                   *
+ *   Tobias Neumann <tneumann@fnal.gov>             *
+ *   Ciaran Williams <ciaranwi@buffalo.edu>         *
+ *                                                  *
+ *  CuTe-MCFM Authors:                              *
+ *                                                  *
+ *   Thomas Becher <becher@itp.unibe.ch>            *
+ *   Tobias Neumann <tneumann@fnal.gov>             *
+ *                                                  *
+ *   See https://mcfm.fnal.gov/                     *
+ *     for a full list of contributors.             *
+ *                                                  *
+ ****************************************************
+
+ ****************  MCFM references   ****************
+ *                                                  *
+ *  Precision phenomenology with MCFM-9.0           *
+ *   J.M. Campbell, T. Neumann                      *
+ *    arXiv:1909.09117                              *
+ *                                                  *
+ *  An update on vector boson pair production at    *
+ *    hadron colliders                              *
+ *   J.M. Campbell, R.K. Ellis, PRD60 (1999) 113006 *
+ *                                                  *
+ *  Vector boson pair production at the LHC         *
+ *   J.M. Campbell, R.K. Ellis, C. Williams,        *
+ *    JHEP 1107 (2011) 018                          *
+ *                                                  *
+ ****************************************************
+ **************  Process references   ***************
+ *                                                  *
+ *  Bounding the Higgs width at the LHC using       *
+ *    full analytic results for gg -> e-e+mu-mu+    *
+ *   J.M. Campbell, R.K. Ellis, C. Williams,        *
+ *    arXiv:1311.3589                               *
+ *                                                  *
+ ****************************************************
+ ****************************************************
+ *   MCFM uses the libraries                        *
+ *                                                  *
+ *    AMOS (Netlib)                                 *
+ *    Chaplin 1.2 (Buehler, Duhr)                   *
+ *    HandyG 0.1.4 (Naterop, Signer, Ulrich)        *
+ *    hplog6 1.6 (Gehrmann, Remiddi)                *
+ *    LHAPDF 6.5.1 (Buckley, et al.)                *
+ *    QCDLoop 2.0.9 (Carazza, Ellis, Zanderighi)    *
+ *    OneLOop (van Hameren)                         *
+ *    Quad Double 2.3.22 (Hida, Li, Bailey)         *
+ *                                                  *
+ ****************************************************
+ 
+ Running MCFM with            1  OMP threads
+ 
+ 
+ MCFM compiled with GCC version 11.2.0 using the options -ffixed-form -cpp -I /u/taepa/mcfm/MCFM-10.3/src/Inc -I /u/taepa/mcfm/MCFM-10.3/. -I /u/taepa/mcfm/MCFM-10.3/Bin/local/include -I /u/taepa/mcfm/MCFM-10.3/Bin/local/include/qd -iprefix /raven/u/system/soft/SLE_15/packages/x86_64/gcc/11.2.0/bin/../lib/gcc/x86_64-pc-linux-gnu/11.2.0/ -D_REENTRANT -D HAVE_LHAPDF=1 -D WITH_VVAMP=1 -mtune=generic -march=x86-64 -finit-local-zero -ffixed-line-length-none -ffree-line-length-512 -fopenmp -ffpe-summary=none -fallow-argument-mismatch -fPIC -J include -fpre-include=/usr/include/finclude/math-vector-fortran.h
+ 
+ 
+ Running MCFM as ./mcfm ./input_gghZZ_sig.ini -general%rundir=gghZZ_sig -general%runstring=gghZZ_sig
+ 
+
+ *****************************************************
+ *     MCFM is calling LHAPDF                        *
+ *                                                   *
+ *   PDFname NNPDF31_nnlo_as_0118                    *
+ *   PDFmember  0                                    *
+ *                                                   *
+ *****************************************************
+
+ ************** Electroweak parameters **************
+ *                                                  *
+ *  zmass(+)   91.1876000     wmass(+)  80.3850000  *
+ * zwidth(+)    2.4952000    wwidth(+)   2.0850000  *
+ *     Gf(+) 0.116639D-04   1/aemmz    132.2319487  *
+ *     xw       0.2228972      mtop(+) 173.3000000  *
+ *   gwsq       0.4263525       esq      0.0950328  *
+ * top width    1.4777968      at order  (LO)       *
+ *    mb        4.6600000        mc      1.2750000  *
+ *                                                  *
+ * Parameters marked (+) are input, others derived  *
+ ****************************************************
+
+ WARNING: Higgs decay H->ZZ is below threshold and
+ may not yield sensible results - check the number
+ of integration points
+
+ ***************** CKM mixing matrix ****************
+ *                                                  *
+ *      Vud=.97417    Vus=.22480    Vub=.40900E-02  *
+ *      Vcd=.22000    Vcs=.99500    Vcb=.40500E-01  *
+ ****************************************************
+ Setting new_pspace = .false. !
+Uniform histogram initialized for 'total cross'
+Uniform histogram initialized for 'pt3456_lin'
+Uniform histogram initialized for 'm3456'
+Custom histogram initialized for 'pt3456'
+Custom histogram initialized for 'ptZZ'
+Uniform histogram initialized for 'ptl1'
+Uniform histogram initialized for 'ptl2'
+Uniform histogram initialized for 'ptl3'
+Uniform histogram initialized for 'ptl4'
+Custom histogram initialized for 'm4lpta'
+Custom histogram initialized for 'm4lonshell'
+ Using sobol with world_size =            1
+ 
+LO warmup integration, contribution  1
+ 
+ 
+ Vegas integration parameters:
+ ndim = 10  ncall =       500000  iter =  5  alpha = 1.5
+ 
+
+ ****************** Basic mass cuts *****************
+ *                                                  *
+ *             60.00  <   m34  <   180.00           *
+ *             60.00  <   m56  <   180.00           *
+ *            180.00  <  m3456 <  1000.00           *
+ ****************************************************
+
+ ****************** Generic cuts ********************
+ *                                                  *
+ *     20.000 <     pt(lepton)     < 13600.000 GeV  *
+ *      0.000 <    |eta(lepton)|   <     2.500      *
+ *       pt(missing)      >     0.00 GeV            *
+ *     15.000 <   pt(2nd lepton)   < 13600.000 GeV  *
+ *      0.000 <  |eta(2nd lepton)| <     2.500      *
+ *      7.000 <   pt(3rd lepton)   < 13600.000 GeV  *
+ *      0.000 <  |eta(3rd lepton)| <     2.500      *
+ *  (3,4) transverse mass >     0.00 GeV            *
+ *      R(jet,lepton)     >     0.00                *
+ *     R(lepton,lepton)   >     0.00                *
+ * |eta(jet1)-eta(jet2)|  >     0.00                *
+ ****************************************************
+
+ ************** Dynamic scale choice ****************
+ *                                                  *
+ *                 RENORMALIZATION                  *
+ *       mu_ren  =  1.00 x m(3456)                  *
+ *                                                  *
+ *                  FACTORIZATION                   *
+ *       mu_fac  =  1.00 x m(3456)                  *
+ *                                                  *
+ ****************************************************
+************** Integration by Vegas (iteration   1) ***************
+*                                                                 *
+*  integral  =  0.61995600E-03   accum. integral =  0.61995600E-03*
+*  std. dev =   0.61995600E-03   accum. std. dev =  0.61995600E-03*
+*   max. wt. =    0.619956E-03                                    *
+*                                                                 *
+*  CPU time used:   4.2952595     seconds                         *
+*  Wall time used:   4.3830000     seconds                        *
+*  Threading efficiency:    98.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    0.000       ***************
+ 
+************** Integration by Vegas (iteration   2) ***************
+*                                                                 *
+*  integral  =  0.17751346E-13   accum. integral =  0.17751346E-13*
+*  std. dev =   0.10330765E-13   accum. std. dev =  0.10330765E-13*
+*   max. wt. =    0.619956E-03                                    *
+*                                                                 *
+*  CPU time used:   4.2934999     seconds                         *
+*  Wall time used:   4.2950000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    1.000       ***************
+ 
+************** Integration by Vegas (iteration   3) ***************
+*                                                                 *
+*  integral  =  0.19258207E-09   accum. integral =  0.17753243E-13*
+*  std. dev =   0.10410893E-09   accum. std. dev =  0.10330765E-13*
+*   max. wt. =    0.619956E-03                                    *
+*                                                                 *
+*  CPU time used:   13.317369     seconds                         *
+*  Wall time used:   13.320000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    2.211       ***************
+ 
+************** Integration by Vegas (iteration   4) ***************
+*                                                                 *
+*  integral  =  0.71519112E-04   accum. integral =  0.17753243E-13*
+*  std. dev =   0.62555767E-04   accum. std. dev =  0.10330765E-13*
+*   max. wt. =    0.619956E-03                                    *
+*                                                                 *
+*  CPU time used:   79.723351     seconds                         *
+*  Wall time used:   79.739000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    1.909       ***************
+ 
+************** Integration by Vegas (iteration   5) ***************
+*                                                                 *
+*  integral  =  0.17607542E-03   accum. integral =  0.17753243E-13*
+*  std. dev =   0.94147705E-04   accum. std. dev =  0.10330765E-13*
+*   max. wt. =    0.619956E-03                                    *
+*                                                                 *
+*  CPU time used:   104.19315     seconds                         *
+*  Wall time used:   104.21100     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    2.306       ***************
+ 
+ 
+CPU time for last  5 iterations:   205.82312    
+Wall time for last  5 iterations:   205.94800    
+ 
+ 
+CPU time total:   205.92271    
+Wall time total:   207.03100    
+ 
+Relative warmup precision goal of  25 percent not reached
+ Increasing calls to                700000
+ 
+LO warmup integration, contribution  1
+ 
+ 
+ Vegas integration parameters:
+ ndim = 10  ncall =       700000  iter =  5  alpha = 1.5
+ 
+************** Integration by Vegas (iteration   1) ***************
+*                                                                 *
+*  integral  =  0.11420794       accum. integral =  0.11420794    *
+*  std. dev =   0.95367707E-01   accum. std. dev =  0.95367707E-01*
+*   max. wt. =    0.932531E-01                                    *
+*                                                                 *
+*  CPU time used:   5.9457550     seconds                         *
+*  Wall time used:   5.9460000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    0.000       ***************
+ 
+************** Integration by Vegas (iteration   2) ***************
+*                                                                 *
+*  integral  =  0.54147973E-10   accum. integral =  0.54147973E-10*
+*  std. dev =   0.52712645E-10   accum. std. dev =  0.52712645E-10*
+*   max. wt. =    0.932531E-01                                    *
+*                                                                 *
+*  CPU time used:   5.9647064     seconds                         *
+*  Wall time used:   5.9660000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    1.434       ***************
+ 
+************** Integration by Vegas (iteration   3) ***************
+*                                                                 *
+*  integral  =  0.14042712E-12   accum. integral =  0.14076397E-12*
+*  std. dev =   0.13164687E-12   accum. std. dev =  0.13164645E-12*
+*   max. wt. =    0.932531E-01                                    *
+*                                                                 *
+*  CPU time used:   17.264038     seconds                         *
+*  Wall time used:   17.267000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    1.242       ***************
+ 
+************** Integration by Vegas (iteration   4) ***************
+*                                                                 *
+*  integral  =  0.25382238E-06   accum. integral =  0.14076411E-12*
+*  std. dev =   0.18138977E-06   accum. std. dev =  0.13164645E-12*
+*   max. wt. =    0.932531E-01                                    *
+*                                                                 *
+*  CPU time used:   159.79085     seconds                         *
+*  Wall time used:   159.81700     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    1.481       ***************
+ 
+************** Integration by Vegas (iteration   5) ***************
+*                                                                 *
+*  integral  =  0.51492821E-05   accum. integral =  0.14076412E-12*
+*  std. dev =   0.34497366E-05   accum. std. dev =  0.13164645E-12*
+*   max. wt. =    0.932531E-01                                    *
+*                                                                 *
+*  CPU time used:   155.59607     seconds                         *
+*  Wall time used:   155.62000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    1.667       ***************
+ 
+ 
+CPU time for last  5 iterations:   344.56189    
+Wall time for last  5 iterations:   344.61600    
+ 
+ 
+CPU time total:   550.48462    
+Wall time total:   551.64700    
+ 
+Relative warmup precision goal of  25 percent not reached
+ Increasing calls to                979999
+ 
+LO warmup integration, contribution  1
+ 
+ 
+ Vegas integration parameters:
+ ndim = 10  ncall =       979999  iter =  5  alpha = 1.5
+ 
+************** Integration by Vegas (iteration   1) ***************
+*                                                                 *
+*  integral  =  0.12189116       accum. integral =  0.12189116    *
+*  std. dev =   0.73724914E-01   accum. std. dev =  0.73724914E-01*
+*   max. wt. =    0.932531E-01                                    *
+*                                                                 *
+*  CPU time used:   8.3197632     seconds                         *
+*  Wall time used:   8.3210000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    0.000       ***************
+ 
+************** Integration by Vegas (iteration   2) ***************
+*                                                                 *
+*  integral  =  0.20798638E-06   accum. integral =  0.20798672E-06*
+*  std. dev =   0.12374063E-06   accum. std. dev =  0.12374063E-06*
+*   max. wt. =    0.932531E-01                                    *
+*                                                                 *
+*  CPU time used:   8.5054932     seconds                         *
+*  Wall time used:   8.5070000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    2.733       ***************
+ 
+************** Integration by Vegas (iteration   3) ***************
+*                                                                 *
+*  integral  =  0.32423707E-03   accum. integral =  0.20813683E-06*
+*  std. dev =   0.18180475E-03   accum. std. dev =  0.12374060E-06*
+*   max. wt. =    0.932531E-01                                    *
+*                                                                 *
+*  CPU time used:   28.236755     seconds                         *
+*  Wall time used:   28.241000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    2.955       ***************
+ 
+************** Integration by Vegas (iteration   4) ***************
+*                                                                 *
+*  integral  =  0.30557182E-01   accum. integral =  0.20813759E-06*
+*  std. dev =   0.24742657E-01   accum. std. dev =  0.12374060E-06*
+*   max. wt. =    0.932531E-01                                    *
+*                                                                 *
+*  CPU time used:   212.39819     seconds                         *
+*  Wall time used:   212.43100     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    2.478       ***************
+ 
+************** Integration by Vegas (iteration   5) ***************
+*                                                                 *
+*  integral  =  0.17352745E-01   accum. integral =  0.20813961E-06*
+*  std. dev =   0.11481147E-01   accum. std. dev =  0.12374060E-06*
+*   max. wt. =    0.932531E-01                                    *
+*                                                                 *
+*  CPU time used:   202.01367     seconds                         *
+*  Wall time used:   202.04500     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    2.430       ***************
+ 
+ 
+CPU time for last  5 iterations:   459.47443    
+Wall time for last  5 iterations:   459.54700    
+ 
+ 
+CPU time total:   1009.9590    
+Wall time total:   1011.1940    
+ 
+Relative warmup precision goal of  25 percent not reached
+ Increasing calls to               1371998
+ 
+LO warmup integration, contribution  1
+ 
+ 
+ Vegas integration parameters:
+ ndim = 10  ncall =      1371998  iter =  5  alpha = 1.5
+ 
+************** Integration by Vegas (iteration   1) ***************
+*                                                                 *
+*  integral  =  0.26560977       accum. integral =  0.26560977    *
+*  std. dev =   0.18134836       accum. std. dev =  0.18134836    *
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   11.643005     seconds                         *
+*  Wall time used:   11.645000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    0.000       ***************
+ 
+************** Integration by Vegas (iteration   2) ***************
+*                                                                 *
+*  integral  =  0.12901356E-07   accum. integral =  0.12901357E-07*
+*  std. dev =   0.12499966E-07   accum. std. dev =  0.12499966E-07*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   11.785034     seconds                         *
+*  Wall time used:   11.787000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    2.145       ***************
+ 
+************** Integration by Vegas (iteration   3) ***************
+*                                                                 *
+*  integral  =  0.61348342E-09   accum. integral =  0.63101020E-09*
+*  std. dev =   0.47242361E-09   accum. std. dev =  0.47208657E-09*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   41.544434     seconds                         *
+*  Wall time used:   41.550000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    1.555       ***************
+ 
+************** Integration by Vegas (iteration   4) ***************
+*                                                                 *
+*  integral  =  0.31349082E-04   accum. integral =  0.63103490E-09*
+*  std. dev =   0.16820229E-04   accum. std. dev =  0.47208657E-09*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   243.58838     seconds                         *
+*  Wall time used:   243.62700     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    2.195       ***************
+ 
+************** Integration by Vegas (iteration   5) ***************
+*                                                                 *
+*  integral  =  0.37821663E-01   accum. integral =  0.63103491E-09*
+*  std. dev =   0.25565861E-01   accum. std. dev =  0.47208657E-09*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   288.89978     seconds                         *
+*  Wall time used:   288.95400     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    2.193       ***************
+ 
+ 
+CPU time for last  5 iterations:   597.46118    
+Wall time for last  5 iterations:   597.56400    
+ 
+ 
+CPU time total:   1607.4202    
+Wall time total:   1608.7580    
+ 
+Relative warmup precision goal of  25 percent not reached
+ Increasing calls to               1920797
+ 
+LO warmup integration, contribution  1
+ 
+ 
+ Vegas integration parameters:
+ ndim = 10  ncall =      1920797  iter =  5  alpha = 1.5
+ 
+************** Integration by Vegas (iteration   1) ***************
+*                                                                 *
+*  integral  =  0.14921715       accum. integral =  0.14921715    *
+*  std. dev =   0.95055019E-01   accum. std. dev =  0.95055019E-01*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   16.309204     seconds                         *
+*  Wall time used:   16.312000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    0.000       ***************
+ 
+************** Integration by Vegas (iteration   2) ***************
+*                                                                 *
+*  integral  =  0.16281803E-07   accum. integral =  0.16281804E-07*
+*  std. dev =   0.84406482E-08   accum. std. dev =  0.84406482E-08*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   16.689575     seconds                         *
+*  Wall time used:   16.693000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    2.464       ***************
+ 
+************** Integration by Vegas (iteration   3) ***************
+*                                                                 *
+*  integral  =  0.19659878E-02   accum. integral =  0.16281856E-07*
+*  std. dev =   0.16476799E-02   accum. std. dev =  0.84406482E-08*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   47.796875     seconds                         *
+*  Wall time used:   47.807000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    1.944       ***************
+ 
+************** Integration by Vegas (iteration   4) ***************
+*                                                                 *
+*  integral  =  0.43311320E-02   accum. integral =  0.16281945E-07*
+*  std. dev =   0.18582175E-02   accum. std. dev =  0.84406482E-08*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   411.89575     seconds                         *
+*  Wall time used:   411.97900     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    3.107       ***************
+ 
+************** Integration by Vegas (iteration   5) ***************
+*                                                                 *
+*  integral  =  0.90996012E-01   accum. integral =  0.16281967E-07*
+*  std. dev =   0.17083957E-01   accum. std. dev =  0.84406482E-08*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   390.71509     seconds                         *
+*  Wall time used:   390.77900     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    9.423       ***************
+ 
+ Restarting integration due to abnormally large chisq > 2*warmupChisqGoal
+ 
+CPU time for last  5 iterations:   883.40723    
+Wall time for last  5 iterations:   883.57000    
+ 
+ 
+CPU time total:   2490.8274    
+Wall time total:   2492.3290    
+ 
+Relative warmup precision goal of  25 percent not reached
+ Increasing calls to               2689115
+ 
+LO warmup integration, contribution  1
+ 
+ 
+ Vegas integration parameters:
+ ndim = 10  ncall =      2689115  iter =  5  alpha = 1.5
+ 
+************** Integration by Vegas (iteration   1) ***************
+*                                                                 *
+*  integral  =  0.22019883       accum. integral =  0.22019883    *
+*  std. dev =   0.13890551       accum. std. dev =  0.13890551    *
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   23.075439     seconds                         *
+*  Wall time used:   23.079000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    0.000       ***************
+ 
+************** Integration by Vegas (iteration   2) ***************
+*                                                                 *
+*  integral  =  0.16872325E-06   accum. integral =  0.16872336E-06*
+*  std. dev =   0.96978680E-07   accum. std. dev =  0.96978680E-07*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   23.435547     seconds                         *
+*  Wall time used:   23.439000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    2.513       ***************
+ 
+************** Integration by Vegas (iteration   3) ***************
+*                                                                 *
+*  integral  =  0.65554606E-02   accum. integral =  0.16872507E-06*
+*  std. dev =   0.59979036E-02   accum. std. dev =  0.96978680E-07*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   67.012451     seconds                         *
+*  Wall time used:   67.023000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    1.854       ***************
+ 
+************** Integration by Vegas (iteration   4) ***************
+*                                                                 *
+*  integral  =  0.57822911E-03   accum. integral =  0.16881420E-06*
+*  std. dev =   0.24698056E-03   accum. std. dev =  0.96978672E-07*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   491.49609     seconds                         *
+*  Wall time used:   491.57700     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    3.062       ***************
+ 
+************** Integration by Vegas (iteration   5) ***************
+*                                                                 *
+*  integral  =  0.32660923E-01   accum. integral =  0.16881968E-06*
+*  std. dev =   0.74855865E-02   accum. std. dev =  0.96978672E-07*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   469.71753     seconds                         *
+*  Wall time used:   469.81800     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    7.056       ***************
+ 
+ Restarting integration due to abnormally large chisq > 2*warmupChisqGoal
+ 
+CPU time for last  5 iterations:   1074.7375    
+Wall time for last  5 iterations:   1074.9360    
+ 
+ 
+CPU time total:   3565.5650    
+Wall time total:   3567.2650    
+ 
+Relative warmup precision goal of  25 percent not reached
+ Increasing calls to               3764760
+ 
+LO warmup integration, contribution  1
+ 
+ 
+ Vegas integration parameters:
+ ndim = 10  ncall =      3764760  iter =  5  alpha = 1.5
+ 
+************** Integration by Vegas (iteration   1) ***************
+*                                                                 *
+*  integral  =  0.11085219       accum. integral =  0.11085219    *
+*  std. dev =   0.56267492E-01   accum. std. dev =  0.56267492E-01*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   32.290527     seconds                         *
+*  Wall time used:   32.295000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    0.000       ***************
+ 
+************** Integration by Vegas (iteration   2) ***************
+*                                                                 *
+*  integral  =  0.12272225E-03   accum. integral =  0.12291469E-03*
+*  std. dev =   0.74177473E-04   accum. std. dev =  0.74177409E-04*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   32.691406     seconds                         *
+*  Wall time used:   32.695000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    3.873       ***************
+ 
+************** Integration by Vegas (iteration   3) ***************
+*                                                                 *
+*  integral  =  0.30784421E-01   accum. integral =  0.12316213E-03*
+*  std. dev =   0.26111414E-01   accum. std. dev =  0.74177109E-04*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   88.103271     seconds                         *
+*  Wall time used:   88.114000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    2.626       ***************
+ 
+************** Integration by Vegas (iteration   4) ***************
+*                                                                 *
+*  integral  =  0.22788412E-01   accum. integral =  0.12495165E-03*
+*  std. dev =   0.83476684E-02   accum. std. dev =  0.74174181E-04*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   811.64404     seconds                         *
+*  Wall time used:   811.77200     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    4.208       ***************
+ 
+************** Integration by Vegas (iteration   5) ***************
+*                                                                 *
+*  integral  =  0.85040547E-01   accum. integral =  0.12803117E-03*
+*  std. dev =   0.12316780E-01   accum. std. dev =  0.74172836E-04*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   696.17676     seconds                         *
+*  Wall time used:   696.28200     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    15.04       ***************
+ 
+ Restarting integration due to abnormally large chisq > 2*warmupChisqGoal
+ 
+CPU time for last  5 iterations:   1660.9067    
+Wall time for last  5 iterations:   1661.1590    
+ 
+ 
+CPU time total:   5226.4715    
+Wall time total:   5228.4240    
+ 
+Relative warmup precision goal of  25 percent not reached
+ Increasing calls to               5270664
+ 
+LO warmup integration, contribution  1
+ 
+ 
+ Vegas integration parameters:
+ ndim = 10  ncall =      5270664  iter =  5  alpha = 1.5
+ 
+************** Integration by Vegas (iteration   1) ***************
+*                                                                 *
+*  integral  =  0.10655843       accum. integral =  0.10655843    *
+*  std. dev =   0.43270585E-01   accum. std. dev =  0.43270585E-01*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   45.220215     seconds                         *
+*  Wall time used:   45.227000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    0.000       ***************
+ 
+************** Integration by Vegas (iteration   2) ***************
+*                                                                 *
+*  integral  =  0.88448741E-03   accum. integral =  0.90857121E-03*
+*  std. dev =   0.65331224E-03   accum. std. dev =  0.65323779E-03*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   46.084961     seconds                         *
+*  Wall time used:   46.092000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    5.963       ***************
+ 
+ Restarting integration due to abnormally large chisq > 2*warmupChisqGoal
+ 
+CPU time for last  5 iterations:   91.305664    
+Wall time for last  5 iterations:   91.319000    
+ 
+ 
+CPU time total:   5317.7772    
+Wall time total:   5319.7430    
+ 
+Relative warmup precision goal of  25 percent not reached
+ Increasing calls to               7378929
+ 
+LO warmup integration, contribution  1
+ 
+ 
+ Vegas integration parameters:
+ ndim = 10  ncall =      7378929  iter =  5  alpha = 1.5
+ 
+************** Integration by Vegas (iteration   1) ***************
+*                                                                 *
+*  integral  =  0.19470709       accum. integral =  0.19470709    *
+*  std. dev =   0.78164696E-01   accum. std. dev =  0.78164696E-01*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   63.315918     seconds                         *
+*  Wall time used:   63.325000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    0.000       ***************
+ 
+************** Integration by Vegas (iteration   2) ***************
+*                                                                 *
+*  integral  =  0.87389788E-03   accum. integral =  0.88199226E-03*
+*  std. dev =   0.50512325E-03   accum. std. dev =  0.50511271E-03*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   64.279297     seconds                         *
+*  Wall time used:   64.289000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    6.149       ***************
+ 
+ Restarting integration due to abnormally large chisq > 2*warmupChisqGoal
+ 
+CPU time for last  5 iterations:   127.59570    
+Wall time for last  5 iterations:   127.61400    
+ 
+ 
+CPU time total:   5445.3730    
+Wall time total:   5447.3570    
+ 
+Relative warmup precision goal of  25 percent not reached
+ Increasing calls to              10330500
+ 
+LO warmup integration, contribution  1
+ 
+ 
+ Vegas integration parameters:
+ ndim = 10  ncall =     10330500  iter =  5  alpha = 1.5
+ 
+************** Integration by Vegas (iteration   1) ***************
+*                                                                 *
+*  integral  =  0.19765970       accum. integral =  0.19765970    *
+*  std. dev =   0.66979224E-01   accum. std. dev =  0.66979224E-01*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   88.676758     seconds                         *
+*  Wall time used:   88.689000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    0.000       ***************
+ 
+************** Integration by Vegas (iteration   2) ***************
+*                                                                 *
+*  integral  =  0.10021614E-01   accum. integral =  0.11337494E-01*
+*  std. dev =   0.56288034E-02   accum. std. dev =  0.56090316E-02*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   90.590820     seconds                         *
+*  Wall time used:   90.607000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    7.793       ***************
+ 
+ Restarting integration due to abnormally large chisq > 2*warmupChisqGoal
+ 
+CPU time for last  5 iterations:   179.26758    
+Wall time for last  5 iterations:   179.29600    
+ 
+ 
+CPU time total:   5624.6408    
+Wall time total:   5626.6530    
+ 
+Relative warmup precision goal of  25 percent not reached
+ Increasing calls to              14462700
+ 
+LO warmup integration, contribution  1
+ 
+ 
+ Vegas integration parameters:
+ ndim = 10  ncall =     14462700  iter =  5  alpha = 1.5
+ 
+************** Integration by Vegas (iteration   1) ***************
+*                                                                 *
+*  integral  =  0.20278380       accum. integral =  0.20278380    *
+*  std. dev =   0.60915933E-01   accum. std. dev =  0.60915933E-01*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   124.17334     seconds                         *
+*  Wall time used:   124.19300     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    0.000       ***************
+ 
+************** Integration by Vegas (iteration   2) ***************
+*                                                                 *
+*  integral  =  0.32682447E-01   accum. integral =  0.41372428E-01*
+*  std. dev =   0.14134266E-01   accum. std. dev =  0.13768494E-01*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   126.94775     seconds                         *
+*  Wall time used:   126.96800     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    7.399       ***************
+ 
+ Restarting integration due to abnormally large chisq > 2*warmupChisqGoal
+ 
+CPU time for last  5 iterations:   251.12109    
+Wall time for last  5 iterations:   251.16100    
+ 
+ 
+CPU time total:   5875.7620    
+Wall time total:   5877.8140    
+ 
+Relative warmup precision goal of  25 percent not reached
+ Increasing calls to              20247780
+ 
+LO warmup integration, contribution  1
+ 
+ 
+ Vegas integration parameters:
+ ndim = 10  ncall =     20247780  iter =  5  alpha = 1.5
+ 
+************** Integration by Vegas (iteration   1) ***************
+*                                                                 *
+*  integral  =  0.16108461       accum. integral =  0.16108461    *
+*  std. dev =   0.42301804E-01   accum. std. dev =  0.42301804E-01*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   173.95166     seconds                         *
+*  Wall time used:   173.98800     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    0.000       ***************
+ 
+************** Integration by Vegas (iteration   2) ***************
+*                                                                 *
+*  integral  =  0.45885880E-01   accum. integral =  0.54085646E-01*
+*  std. dev =   0.11710349E-01   accum. std. dev =  0.11285889E-01*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   177.84082     seconds                         *
+*  Wall time used:   177.87200     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    6.888       ***************
+ 
+ Restarting integration due to abnormally large chisq > 2*warmupChisqGoal
+ 
+CPU time for last  5 iterations:   351.79248    
+Wall time for last  5 iterations:   351.86100    
+ 
+ 
+CPU time total:   6227.5550    
+Wall time total:   6229.6750    
+ 
+Chisq/it warmup precision goal of 2.500 not reached
+ Increasing calls to              28346892
+ 
+LO warmup integration, contribution  1
+ 
+ 
+ Vegas integration parameters:
+ ndim = 10  ncall =     28346892  iter =  5  alpha = 1.5
+ 
+************** Integration by Vegas (iteration   1) ***************
+*                                                                 *
+*  integral  =  0.20303470       accum. integral =  0.20303470    *
+*  std. dev =   0.42227901E-01   accum. std. dev =  0.42227901E-01*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   243.19678     seconds                         *
+*  Wall time used:   243.22300     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    0.000       ***************
+ 
+************** Integration by Vegas (iteration   2) ***************
+*                                                                 *
+*  integral  =  0.75704632E-01   accum. integral =  0.90056795E-01*
+*  std. dev =   0.15050864E-01   accum. std. dev =  0.14177273E-01*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   248.45312     seconds                         *
+*  Wall time used:   248.48400     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    8.067       ***************
+ 
+ Restarting integration due to abnormally large chisq > 2*warmupChisqGoal
+ 
+CPU time for last  5 iterations:   491.64990    
+Wall time for last  5 iterations:   491.70700    
+ 
+ 
+CPU time total:   6719.2053    
+Wall time total:   6721.3820    
+ 
+Chisq/it warmup precision goal of 2.500 not reached
+ Increasing calls to              39685648
+ 
+LO warmup integration, contribution  1
+ 
+ 
+ Vegas integration parameters:
+ ndim = 10  ncall =     39685648  iter =  5  alpha = 1.5
+ 
+************** Integration by Vegas (iteration   1) ***************
+*                                                                 *
+*  integral  =  0.13988068       accum. integral =  0.13988068    *
+*  std. dev =   0.25752310E-01   accum. std. dev =  0.25752310E-01*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   340.54395     seconds                         *
+*  Wall time used:   340.59100     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    0.000       ***************
+ 
+************** Integration by Vegas (iteration   2) ***************
+*                                                                 *
+*  integral  =  0.11902834       accum. integral =  0.12493365    *
+*  std. dev =   0.16186763E-01   accum. std. dev =  0.13704402E-01*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   348.84473     seconds                         *
+*  Wall time used:   348.90600     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =   0.4700       ***************
+ 
+************** Integration by Vegas (iteration   3) ***************
+*                                                                 *
+*  integral  =  0.14401602       accum. integral =  0.14357756    *
+*  std. dev =   0.21016312E-02   accum. std. dev =  0.20773460E-02*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   982.65332     seconds                         *
+*  Wall time used:   982.82000     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    1.182       ***************
+ 
+************** Integration by Vegas (iteration   4) ***************
+*                                                                 *
+*  integral  =  0.13677920       accum. integral =  0.13977570    *
+*  std. dev =   0.18442407E-02   accum. std. dev =  0.13791571E-02*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   7041.5029     seconds                         *
+*  Wall time used:   7042.5380     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    2.785       ***************
+ 
+************** Integration by Vegas (iteration   5) ***************
+*                                                                 *
+*  integral  =  0.14053868       accum. integral =  0.13981998    *
+*  std. dev =   0.55562765E-02   accum. std. dev =  0.13385388E-02*
+*   max. wt. =    0.169157                                        *
+*                                                                 *
+*  CPU time used:   7474.1611     seconds                         *
+*  Wall time used:   7475.4440     seconds                        *
+*  Threading efficiency:   100.0%                                 *
+*                                                                 *
+***************   chi**2/iteration =    2.093       ***************
+ 
+                                  
+================================= 
+Global information about the job: 
+================================= 
+  
+Job owner: taepa(54821)
+Job name:  gghZZ_sig
+Node list: ravc4113
+Job start: Fri Aug  9 22:05:38 CEST 2024
+Job end:   Sat Aug 10 06:05:46 CEST 2024
+Work dir:  /raven/u/taepa/mcfm/MCFM-10.3/Bin
+Command:   /raven/u/taepa/mcfm/MCFM-10.3/Bin/gghZZ_sig/job.sh
+  
+  
+  
+==========================================================================================
+Information on jobsteps (Note: MaxRSS/AveRSS is the maximum/average over all 
+tasks of the per-task memory high-water marks; cf. "man sacct"): 
+==========================================================================================
+  
+JobID            JobName NNodes NTasks  NCPUS       MaxRSS       AveRSS    Elapsed ExitCode
+------------- ---------- ------ ------ ------ ------------ ------------ ---------- --------
+12302621       gghZZ_sig      1             2                             08:00:08      0:0
+  
+Maximum memory per node: 0.050656 GB (defined as MaxRSS*Ntasks/NNodes)
+CPU utilization: 0.0 %
+  
