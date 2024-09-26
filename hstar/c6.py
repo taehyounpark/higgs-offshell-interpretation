@@ -55,16 +55,28 @@ class Sample():
       msq_morphing = np.ones_like(self.events[self.sm_msq_key])
       for ievent, event in self.events.iterrows():
         msq_morphing[ievent] = self._morph_msq_one_event(event, c6)
-      return msq_morphing
+      return np.array(msq_morphing)
     else:
       msq_morphing = np.ones((len(self.events[self.sm_msq_key]), len(c6)))
       for ievent, event in self.events.iterrows():
         msq_morphing[ievent, :] = self._morph_msq_one_event(event, c6)
-      return msq_morphing
+      return np.array(msq_morphing)
       
   def msq(self, c6=None):
+    """
+    Returns the matrix element (squared) for a given set of events.
+
+    Parameters:
+      c6 (float or array-like, optional): The value(s) of the Wilson coefficient c6.
+        If None, returns the Standard Model value. If a scalar, returns the matrix element
+        morphed, i.e. inter-/extra-polated, to the given C6 value. If an array, returns the value morphed to
+        each value in the array.
+
+    Returns:
+      numpy.ndarray: The matrix element value(s) for the given events under the specified c6 value(s).
+    """
     if c6 is None:
-      return self.events[self.sm_msq_key]
+      return np.array(self.events[self.sm_msq_key])
     elif np.isscalar(c6):
       return self._morph_msq_per_event(c6) * np.array(self.events[self.sm_msq_key])
     else:
