@@ -1,4 +1,5 @@
 import numpy as np
+from enum import Enum
 
 def solve_polynomial(x, y):
   """
@@ -23,6 +24,12 @@ def solve_polynomial(x, y):
 
   # return the function
   return coeffs[::-1]
+
+class Amplitude(Enum):
+  INT = -1
+  SIG = 1
+  BKG = 0
+  SBI = 2
 
 class Sample():
 
