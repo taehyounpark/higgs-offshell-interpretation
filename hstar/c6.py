@@ -1,35 +1,44 @@
 import numpy as np
-from enum import Enum
+import pandas as pd
 
-def solve_polynomial(x, y):
-  """
-  Finds the coefficients of the polynomial that fits the given (x, y) coordinates.
+def normalize(weights, *, xs, lumi, k=1.0):
+  weights *= xs * k * lumi / np.sum(weights)
 
-  Parameters:
-  x (array-like): An array of x coordinates.
-  y (array-like): An array of y coordinates.
-
-  Returns:
-  numpy.ndarray: The coefficients of the polynomial.
-  """
-  x = np.array(x)
-  y = np.array(y)
-  N = len(x)
+class Amplitude():
   
-  # construct the Vandermonde matrix
-  V = np.vander(x, N, increasing=True)
-  
-  # solve for the polynomial coefficients
-  coeffs = np.linalg.solve(V, y)
+  def __init__(self, xs, sm='', c6={}):
+    self.sm_msq_key = sm
+    self.c6_msq_map = c6
+    self.c6_vals = None
 
-  # return the function
-  return coeffs[::-1]
+  def predict(self, events):
+    c6_vals = np.array(list(self.c6_msq_map.keys()))
+    msq_c6 = np.array([self.events[c6_msq_key] for c6_msq_key in self.c6_msq_map.values()]).T
+    msq_sm = np.array(self.events[self.sm_msq_key])
+    
+    # Solve the polynomial for each row
+    coeffs = np.apply_along_axis(lambda x: np.linalg.solve(np.vander(c6_vals, len(c6_vals), increasing=True), x), 1, msq_c6 / msq_sm[:, np.newaxis])[:, ::-1]
+    
+    # Evaluate the polynomial at c6 for each row
+    return np.array([np.polyval(coeffs[i, :], c6) for i in range(len(coeffs))])
 
-class Amplitude(Enum):
-  INT = -1
-  SIG = 1
-  BKG = 0
-  SBI = 2
+class Yield():
+
+  def __init__(self, processes : list, events : pd.DataFrame, weight='wt'):
+    self.processes = processes
+    self.events = events
+    self.weights = np.array(events[weight])
+
+  def predict(self):
+    pass
+
+class DensityRatio():
+
+  def __init__(self):
+    pass
+
+  def predict(self, events):
+    pass
 
 class Sample():
 
@@ -50,24 +59,16 @@ class Sample():
     self.events[self.sm_wt_key] *= self.sm_xs * lumi / np.sum(self.events[self.sm_wt_key])
     return self.events
 
-  def _morph_msq_one_event(self, event, c6):
-    msq_sm = event[self.sm_msq_key]
-    msq_c6 = np.array([event[c6_msq_key] for c6_msq_key in self.c6_msq_map.values()])
-    c6_vals = list(self.c6_msq_map.keys())
-    coeffs = solve_polynomial(c6_vals, msq_c6 / msq_sm)
-    return np.polyval(coeffs, c6)
-
   def _morph_msq_per_event(self, c6):
-    if np.isscalar(c6):
-      msq_morphing = np.ones_like(self.events[self.sm_msq_key])
-      for ievent, event in self.events.iterrows():
-        msq_morphing[ievent] = self._morph_msq_one_event(event, c6)
-      return np.array(msq_morphing)
-    else:
-      msq_morphing = np.ones((len(self.events[self.sm_msq_key]), len(c6)))
-      for ievent, event in self.events.iterrows():
-        msq_morphing[ievent, :] = self._morph_msq_one_event(event, c6)
-      return np.array(msq_morphing)
+    c6_vals = np.array(list(self.c6_msq_map.keys()))
+    msq_c6 = np.array([self.events[c6_msq_key] for c6_msq_key in self.c6_msq_map.values()]).T
+    msq_sm = np.array(self.events[self.sm_msq_key])
+    
+    # Solve the polynomial for each row
+    coeffs = np.apply_along_axis(lambda x: np.linalg.solve(np.vander(c6_vals, len(c6_vals), increasing=True), x), 1, msq_c6 / msq_sm[:, np.newaxis])[:, ::-1]
+    
+    # Evaluate the polynomial at c6 for each row
+    return np.array([np.polyval(coeffs[i], c6) for i in range(len(coeffs))])
       
   def msq(self, c6=None):
     """
