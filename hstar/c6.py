@@ -1,45 +1,6 @@
 import numpy as np
 import pandas as pd
 
-def normalize(weights, *, xs, lumi, k=1.0):
-  weights *= xs * k * lumi / np.sum(weights)
-
-class Amplitude():
-  
-  def __init__(self, xs, sm='', c6={}):
-    self.sm_msq_key = sm
-    self.c6_msq_map = c6
-    self.c6_vals = None
-
-  def predict(self, events):
-    c6_vals = np.array(list(self.c6_msq_map.keys()))
-    msq_c6 = np.array([self.events[c6_msq_key] for c6_msq_key in self.c6_msq_map.values()]).T
-    msq_sm = np.array(self.events[self.sm_msq_key])
-    
-    # Solve the polynomial for each row
-    coeffs = np.apply_along_axis(lambda x: np.linalg.solve(np.vander(c6_vals, len(c6_vals), increasing=True), x), 1, msq_c6 / msq_sm[:, np.newaxis])[:, ::-1]
-    
-    # Evaluate the polynomial at c6 for each row
-    return np.array([np.polyval(coeffs[i, :], c6) for i in range(len(coeffs))])
-
-class Yield():
-
-  def __init__(self, processes : list, events : pd.DataFrame, weight='wt'):
-    self.processes = processes
-    self.events = events
-    self.weights = np.array(events[weight])
-
-  def predict(self):
-    pass
-
-class DensityRatio():
-
-  def __init__(self):
-    pass
-
-  def predict(self, events):
-    pass
-
 class Sample():
 
   def __init__(self, xs, events, *, k=1.0):
