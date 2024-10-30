@@ -24,7 +24,7 @@ class Sample():
     self.amplitude = amplitude
     self.components = components
 
-  def open(self, csv, lumi, xs, *, k = 1.0):
+  def open(self, csv, lumi, xs, *, k = 1.0, nrows=None):
     xs = np.array(xs) * k # times by k-factor
     # single-channel
     if np.isscalar(xs):
@@ -36,7 +36,7 @@ class Sample():
       assert (isinstance(csv, list) and len(csv) == len(xs))
       events_per_channel = []
       for ichannel, filepath in enumerate(csv):
-        events = pd.read_csv(filepath, nrows=10000)
+        events = pd.read_csv(filepath, nrows=nrows)
         events[self.weight] *= (xs[ichannel] * lumi / np.sum(events[self.weight]))
         events_per_channel.append(events)
       self.events = pd.concat(events_per_channel)
