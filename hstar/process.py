@@ -41,8 +41,5 @@ class Sample():
         events_per_channel.append(events)
       self.events = pd.concat(events_per_channel)
 
-    for component in self.components.keys():
-      print(self.events[self.components[component]])
-
   def reweight(self, component):
     return np.array(self.events[self.weight] * self.events[self.components[component]] / self.events[self.components[self.amplitude]])
