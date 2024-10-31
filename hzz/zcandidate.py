@@ -74,7 +74,47 @@ class ZmassPairChooser:
         # Set Higgs four momentum
         self.H = self.Z1 + self.Z2
 
+        self.filter_Z()
+
         return vector.array([self.l1_calc,self.l2_calc,self.l3_calc,self.l4_calc], dtype=[('px',float),('py',float),('pz',float),('E',float)]).T
+
+    def filter_Z(self, range1: tuple[int,int]=(50,115), range2: tuple[int,int]=(50,115)) -> None:
+        """
+        Filter all the arrays by allowed Z boson masses. Ranges for allowed masses are specified by range1 and range2.
+
+        params:
+            range1(Tuple[int,int]): The range for allowed Z1 masses. Default is 50 GeV <= Z1 <= 115 GeV 
+            range2(Tuple[int,int]): The range for allowed Z2 masses. Default is 50 GeV <= Z2 <= 115 GeV 
+        """
+        cond1 = np.where((self.Z1.mass>=range1[0])&(self.Z1.mass<=range1[1]))
+        cond2 = np.where((self.Z2.mass>=range2[0])&(self.Z2.mass<=range2[1]))
+
+        # Get only indices where cond1 and cond2 apply
+        indices = np.intersect1d(cond1,cond2)
+
+        # Filter dataframe and sample
+        self.df = self.df.take(indices)
+        self.sample.events = self.df
+
+        # Filter particle momenta
+        self.Z1 = self.Z1[indices]
+        self.Z2 = self.Z2[indices]
+        self.H = self.H[indices]
+
+        self.g1 = self.g1[indices]
+        self.g2 = self.g2[indices]
+
+        self.l1 = self.l1[indices]
+        self.l2 = self.l2[indices]
+        self.l3 = self.l3[indices]
+        self.l4 = self.l4[indices]
+
+        self.l1_calc = self.l1_calc[indices]
+        self.l2_calc = self.l2_calc[indices]
+        self.l3_calc = self.l3_calc[indices]
+        self.l4_calc = self.l4_calc[indices]
+
+        self.m4l = self.m4l[indices]
 
 
 class ClosestZmassChooser:
@@ -147,4 +187,44 @@ class ClosestZmassChooser:
         # Set Higgs four momentum
         self.H = self.Z1 + self.Z2
 
+        self.filter_Z()
+
         return vector.array([self.l1_calc,self.l2_calc,self.l3_calc,self.l4_calc], dtype=[('px',float),('py',float),('pz',float),('E',float)]).T
+    
+    def filter_Z(self, range1: tuple[int,int]=(50,115), range2: tuple[int,int]=(50,115)) -> None:
+        """
+        Filter all the arrays by allowed Z boson masses. Ranges for allowed masses are specified by range1 and range2.
+
+        params:
+            range1(Tuple[int,int]): The range for allowed Z1 masses. Default is 50 GeV <= Z1 <= 115 GeV 
+            range2(Tuple[int,int]): The range for allowed Z2 masses. Default is 50 GeV <= Z2 <= 115 GeV 
+        """
+        cond1 = np.where((self.Z1.mass>=range1[0])&(self.Z1.mass<=range1[1]))
+        cond2 = np.where((self.Z2.mass>=range2[0])&(self.Z2.mass<=range2[1]))
+
+        # Get only indices where cond1 and cond2 apply
+        indices = np.intersect1d(cond1,cond2)
+
+        # Filter dataframe and sample
+        self.df = self.df.take(indices)
+        self.sample.events = self.df
+
+        # Filter particle momenta
+        self.Z1 = self.Z1[indices]
+        self.Z2 = self.Z2[indices]
+        self.H = self.H[indices]
+
+        self.g1 = self.g1[indices]
+        self.g2 = self.g2[indices]
+
+        self.l1 = self.l1[indices]
+        self.l2 = self.l2[indices]
+        self.l3 = self.l3[indices]
+        self.l4 = self.l4[indices]
+
+        self.l1_calc = self.l1_calc[indices]
+        self.l2_calc = self.l2_calc[indices]
+        self.l3_calc = self.l3_calc[indices]
+        self.l4_calc = self.l4_calc[indices]
+
+        self.m4l = self.m4l[indices]
