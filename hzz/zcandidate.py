@@ -42,7 +42,7 @@ class ZmassPairChooser:
 
         Returns:
             Numpy array of lepton four-momenta where l1 and l2 form the Z1 boson and l3 and l4 form the Z2 boson. 
-            Leptons l1 and l3 are positive while l2 and l4 are negative.
+            Leptons l1 and l3 are negative while l2 and l4 are positive.
         """
         # Possible Z bosons from leptons 
         p12 = (self.l1 + self.l2)
@@ -52,8 +52,8 @@ class ZmassPairChooser:
 
         # Possible Z boson pairs as Momentum4D objects in vector arrays
         pairs = vector.array([[p12, p34], [p14, p23]], dtype=[('px',float),('py',float),('pz',float),('E',float)])
-        lepton_pairs = vector.array([[[self.l2,self.l1],[self.l4,self.l3]],
-                                      [[self.l4,self.l1],[self.l2,self.l3]]], dtype=[('px',float),('py',float),('pz',float),('E',float)])
+        lepton_pairs = vector.array([[[self.l1,self.l2],[self.l3,self.l4]],
+                                      [[self.l1,self.l4],[self.l3,self.l2]]], dtype=[('px',float),('py',float),('pz',float),('E',float)])
 
         # Chi squared minimization to determine the closest pair
         chi_sq = np.array([(pair[0].mass - self.Z_mass)**2 + (pair[1].mass - self.Z_mass)**2 for pair in pairs]).T
@@ -157,7 +157,7 @@ class ClosestZmassChooser:
 
         Returns:
             Numpy array of lepton four-momenta where l1 and l2 form the Z1 boson and l3 and l4 form the Z2 boson. 
-            Leptons l1 and l3 are positive while l2 and l4 are negative.
+            Leptons l1 and l3 are negative while l2 and l4 are positive.
         """
         # Possible Z bosons from leptons 
         p12 = (self.l1 + self.l2)
@@ -167,8 +167,8 @@ class ClosestZmassChooser:
 
         # Possible Z boson pairs as Momentum4D objects in vector arrays
         pairs = vector.array([[p12, p34], [p14, p23]], dtype=[('px',float),('py',float),('pz',float),('E',float)])
-        lepton_pairs = vector.array([[[self.l2,self.l1],[self.l4,self.l3]],
-                                      [[self.l4,self.l1],[self.l2,self.l3]]], dtype=[('px',float),('py',float),('pz',float),('E',float)])
+        lepton_pairs = vector.array([[[self.l1,self.l2],[self.l3,self.l4]],
+                                      [[self.l1,self.l4],[self.l3,self.l2]]], dtype=[('px',float),('py',float),('pz',float),('E',float)])
 
         # Just choose the Z boson pair which contains the Z boson closest to the true rest mass
         pairs_diffs = ((pairs.mass - np.ones(pairs.shape)*self.Z_mass)**2).transpose(2,0,1).reshape(pairs.shape[2],4)

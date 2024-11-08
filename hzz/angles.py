@@ -10,10 +10,10 @@ def calculate(l1: MomentumObject4D, l2: MomentumObject4D, l3: MomentumObject4D, 
     Angles used are described in https://journals.aps.org/prd/pdf/10.1103/PhysRevD.86.095031.
 
     params:
-        l1 (MomentumObject4D): Lepton 1 used in calculations. Must be positive and paired up with l2 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
-        l2 (MomentumObject4D): Lepton 2 used in calculations. Must be negative and paired up with l1 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
-        l3 (MomentumObject4D): Lepton 3 used in calculations. Must be positive and paired up with l4 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
-        l4 (MomentumObject4D): Lepton 4 used in calculations. Must be negative and paired up with l3 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
+        l1 (MomentumObject4D): Lepton 1 used in calculations. Must be negative and paired up with l2 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
+        l2 (MomentumObject4D): Lepton 2 used in calculations. Must be positive and paired up with l1 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
+        l3 (MomentumObject4D): Lepton 3 used in calculations. Must be negative and paired up with l4 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
+        l4 (MomentumObject4D): Lepton 4 used in calculations. Must be positive and paired up with l3 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
         tensorize (bool): If True, the output will be converted to a tensorflow tensor. False by default.
 
     Returns:
