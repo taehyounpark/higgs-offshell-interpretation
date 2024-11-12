@@ -10,6 +10,9 @@ class Modifier():
     self.c6_amplitudes = list(c6_amplitudes)
 
   def modify(self, sample, c6):
+    if np.isscalar(c6):
+      c6 = [c6]
+
     msq_c6 = np.array([sample.events[c6_amplitude] for c6_amplitude in self.c6_amplitudes]).T
     msq_sm = np.array(sample.events[sample.components[self.component]])
     # Solve the polynomial for each row

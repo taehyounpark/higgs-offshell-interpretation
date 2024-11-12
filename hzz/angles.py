@@ -22,6 +22,8 @@ def calculate(l1: MomentumObject4D, l2: MomentumObject4D, l3: MomentumObject4D, 
     Z1 = l1+l2
     Z2 = l3+l4
 
+    m4l = (l1+l2+l3+l4).mass
+
     H = Z1+Z2
 
     # Boost both Z bosons to Higgs frame
@@ -76,6 +78,6 @@ def calculate(l1: MomentumObject4D, l2: MomentumObject4D, l3: MomentumObject4D, 
     cth2 = - z1_in_Z2.dot(l3.to_3D())/np.abs(z1_in_Z2.mag*l3.to_3D().mag)
 
     if tensorize:
-        return [tf.convert_to_tensor(np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass]).T), legal_inds]
+        return [tf.convert_to_tensor(np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass, m4l]).T), legal_inds]
     else:
-        return [np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass]).T, legal_inds]
+        return [np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass, m4l]).T, legal_inds]
