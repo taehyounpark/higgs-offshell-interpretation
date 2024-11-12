@@ -4,10 +4,15 @@ import tensorflow as tf
 def build_dataset(x_arr, param_values, signal_weights, background_weights, normalization=1):
     data = []
 
-    print(param_values, np.isscalar(param_values))
+    non_prm=False
 
     if np.isscalar(param_values):
-        param_values = np.array(param_values)
+        param_values = [param_values]
+        non_prm=True
+        print('Non param')
+    elif len(param_values) == 1:
+        non_prm=True
+        print('Non param')
 
     for i in range(len(param_values)):
         param = param_values[i]

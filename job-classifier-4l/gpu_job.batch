@@ -5,7 +5,7 @@
 # Initial working directory:
 #SBATCH -D ./
 # Job name
-#SBATCH -J c6_4l_clf_single
+#SBATCH -J c6_4l_classifier
 #
 #SBATCH --ntasks=1
 #SBATCH --constraint="gpu"
@@ -27,5 +27,5 @@ export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 
 export PYTHONUNBUFFERED=TRUE
 
-source ../bsc-thesis/venv/bin/activate
-srun python classifier_single.py
+source ../../bsc-thesis/venv/bin/activate
+srun python run.py

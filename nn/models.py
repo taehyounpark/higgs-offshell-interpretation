@@ -76,3 +76,33 @@ class C6_4l_clf_reduced_nonprm(Model):
         x = self.dense4(x)
         x = self.dense5(x)
         return self.out(x)
+    
+@keras.utils.register_keras_serializable()
+class ToyClassifierPrm(Model):
+    def __init__(self, **kwargs):
+        swish = Activation(swish_activation, name='Swish')
+
+        self.dense = Dense(10, activation=swish, input_dim=2, kernel_initializer='he_normal')
+        self.dense1 = Dense(10, activation=swish, kernel_initializer='he_normal')
+        self.out = Dense(1, activation='sigmoid')
+
+        super(ToyClassifierPrm, self).__init__(**kwargs)
+
+    def call(self, inputs):
+        x = self.dense(inputs)
+        x = self.dense1(x)
+        return self.out(x)
+
+@keras.utils.register_keras_serializable()
+class ToyClassifier(Model):
+    def __init__(self, **kwargs):
+        swish = Activation(swish_activation, name='Swish')
+
+        self.dense = Dense(2, activation=swish, input_dim=1, kernel_initializer='he_normal')
+        self.out = Dense(1, activation='sigmoid')
+
+        super(ToyClassifier, self).__init__(**kwargs)
+
+    def call(self, inputs):
+        x = self.dense(inputs)
+        return self.out(x)
