@@ -62,8 +62,13 @@ class ZmassPairChooser:
 
         # Determine the Z boson with the higher pT
         # That one will be Z1, the other one Z2
-        pT_min_ind = np.argmin(closest_pair.pt,axis=0) # Z1
-        pT_max_ind = np.argmax(closest_pair.pt,axis=0) # Z2
+        pT_max_ind = np.argmax(closest_pair.pt,axis=0) # Z1
+        pT_min_ind = np.argmin(closest_pair.pt,axis=0) # Z2
+
+        cond=(pT_max_ind==pT_min_ind)
+
+        pT_max_ind[cond] = 0
+        pT_min_ind[cond] = 1
 
         # Set Z1, Z2 and (l1_calc, l2_calc) = Z1; (l3_calc, l4_calc) = Z2
         self.Z1 = closest_pair.T[np.arange(len(pT_max_ind)),pT_max_ind]
@@ -75,6 +80,8 @@ class ZmassPairChooser:
         self.H = self.Z1 + self.Z2
 
         self.filter_Z()
+
+        print(np.sum((self.Z1 == self.Z2).astype(int)))
 
         return vector.array([self.l1_calc,self.l2_calc,self.l3_calc,self.l4_calc], dtype=[('px',float),('py',float),('pz',float),('E',float)]).T
 
