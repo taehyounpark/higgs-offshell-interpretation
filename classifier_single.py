@@ -18,7 +18,7 @@ from tensorflow.keras.optimizers import Nadam # type: ignore
 print('Number of GPUs available: ', len(tf.config.list_physical_devices('GPU')))
 
 SEED=373485
-GEN=2
+GEN=1
 
 
 sample = process.Sample(weight='wt', 
@@ -30,9 +30,9 @@ sample = process.Sample(weight='wt',
   })
 
 sample.open(csv = [
-  '../ggZZ4e_all.csv',
-  '../ggZZ4m_all.csv',
-  '../ggZZ2e2m_all.csv'
+  '../ggZZ4e_all_new.csv',
+  '../ggZZ4m_all_new.csv',
+  '../ggZZ2e2m_all_new.csv'
   ], xs=[1.4783394, 0.47412769, 0.47412769], lumi=3000., k=1.83, nrows=1000000
 )
 
@@ -46,13 +46,13 @@ kin_variables, filter_indices = angles.calculate(leptons.T[0], leptons.T[1], lep
 kin_variables = kin_variables[filter_indices]
 sample.events = sample.events.take(indices=filter_indices)
 
-c6_values = np.linspace(-10,10,21)
+c6 = 10
 
 c6_mod = trilinear.Modifier(c6_values = [-5,-1,0,1,5], c6_amplitudes = ['msq_sbi_c6_6', 'msq_sbi_c6_10', 'msq_sbi_c6_11', 'msq_sbi_c6_12', 'msq_sbi_c6_16'])
-c6_weights = c6_mod.modify(sample=sample, c6=c6_values)
+c6_weights = c6_mod.modify(sample=sample, c6=c6)
 
 train_data = datasets.build_dataset_tf(x_arr = kin_variables, 
-                                       param_values = c6_values, 
+                                       param_values = [c6], 
                                        signal_weights = c6_weights, 
                                        background_weights = np.array(sample.events['wt']),
                                        normalization = 1)
@@ -61,7 +61,7 @@ train_data = tf.random.shuffle(train_data, SEED)
 
 print(train_data, train_data.shape)
 
-model = models.C6_4l_clf_reduced()
+model = models.C6_4l_clf_reduced_nonprm()
 
 optimizer = Nadam(
     learning_rate=0.001,
@@ -72,18 +72,18 @@ optimizer = Nadam(
 
 model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['binary_accuracy'], weighted_metrics=['binary_accuracy'])
 
-os.makedirs('outputs/ckpt/', exist_ok=True)
-os.makedirs('outputs/models/', exist_ok=True)
-os.makedirs('outputs/history/', exist_ok=True)
+os.makedirs('outputs_single/ckpt/', exist_ok=True)
+os.makedirs('outputs_single/models/', exist_ok=True)
+os.makedirs('outputs_single/history/', exist_ok=True)
 
-checkpoint_filepath = f'outputs/ckpt/checkpoint.model_{GEN}.keras'
+checkpoint_filepath = f'outputs_single/ckpt/checkpoint.model_{GEN}.keras'
 model_checkpoint_callback = keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath, monitor='val_loss', mode='min', save_best_only=True)
 
-history_callback = model.fit(x=train_data[:,:9], y=train_data[:,9][:,np.newaxis], sample_weight=train_data[:,10][:,np.newaxis], validation_split=0.3, batch_size=64, callbacks=[model_checkpoint_callback], epochs=100, verbose=2)
+history_callback = model.fit(x=train_data[:,:8], y=train_data[:,8][:,np.newaxis], sample_weight=train_data[:,9][:,np.newaxis], validation_split=0.3, batch_size=64, callbacks=[model_checkpoint_callback], epochs=100, verbose=2)
 
 
-model.save(f'outputs/models/model_{GEN}.keras')
+model.save(f'outputs_single/models/model_{GEN}.keras')
 
-with open(f'outputs/history/history_{GEN}.txt', 'w') as hist_file:
+with open(f'outputs_single/history/history_{GEN}.txt', 'w') as hist_file:
     hist_file.write(str(history_callback.history['loss']))
     hist_file.write(str(history_callback.history['val_loss']))
