@@ -10,7 +10,14 @@ class Modifier():
     self.c6_values = np.array(c6_values)
     self.c6_amplitudes = list(c6_amplitudes)
 
-  def modify(self, sample, c6, cH=None):
+  def modify(self, sample, c6, cH = None):
+
+    if np.isscalar(c6):
+      c6 = [c6]
+
+    if np.isscalar(cH):
+      cH = [cH]
+
     msq_c6 = np.array([sample.events[c6_amplitude] for c6_amplitude in self.c6_amplitudes]).T
     msq_sm = np.array(sample.events[sample.components[self.component]])
 

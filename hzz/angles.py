@@ -10,10 +10,10 @@ def calculate(l1: MomentumObject4D, l2: MomentumObject4D, l3: MomentumObject4D, 
     Angles used are described in https://journals.aps.org/prd/pdf/10.1103/PhysRevD.86.095031.
 
     params:
-        l1 (MomentumObject4D): Lepton 1 used in calculations. Must be positive and paired up with l2 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
-        l2 (MomentumObject4D): Lepton 2 used in calculations. Must be negative and paired up with l1 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
-        l3 (MomentumObject4D): Lepton 3 used in calculations. Must be positive and paired up with l4 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
-        l4 (MomentumObject4D): Lepton 4 used in calculations. Must be negative and paired up with l3 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
+        l1 (MomentumObject4D): Lepton 1 used in calculations. Must be negative and paired up with l2 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
+        l2 (MomentumObject4D): Lepton 2 used in calculations. Must be positive and paired up with l1 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
+        l3 (MomentumObject4D): Lepton 3 used in calculations. Must be negative and paired up with l4 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
+        l4 (MomentumObject4D): Lepton 4 used in calculations. Must be positive and paired up with l3 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
         tensorize (bool): If True, the output will be converted to a tensorflow tensor. False by default.
 
     Returns:
@@ -21,6 +21,8 @@ def calculate(l1: MomentumObject4D, l2: MomentumObject4D, l3: MomentumObject4D, 
     """
     Z1 = l1+l2
     Z2 = l3+l4
+
+    m4l = (l1+l2+l3+l4).mass
 
     H = Z1+Z2
 
@@ -76,6 +78,6 @@ def calculate(l1: MomentumObject4D, l2: MomentumObject4D, l3: MomentumObject4D, 
     cth2 = - z1_in_Z2.dot(l3.to_3D())/np.abs(z1_in_Z2.mag*l3.to_3D().mag)
 
     if tensorize:
-        return [tf.convert_to_tensor(np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass]).T), legal_inds]
+        return [tf.convert_to_tensor(np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass, m4l]).T), legal_inds]
     else:
-        return [np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass]).T, legal_inds]
+        return [np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass, m4l]).T, legal_inds]
