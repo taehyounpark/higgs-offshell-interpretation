@@ -36,7 +36,13 @@ class Sample():
       assert (isinstance(csv, list) and len(csv) == len(xs))
       events_per_channel = []
       for ichannel, filepath in enumerate(csv):
-        events = pd.read_csv(filepath, nrows=nrows)
+        if np.isscalar(nrows) or nrows is None:
+          events = pd.read_csv(filepath, nrows=nrows)
+        elif len(np.array(nrows)) == len(np.array(xs)):
+          events = pd.read_csv(filepath, nrows=nrows[ichannel])
+        else:
+          raise ValueError('nrows has to be None, a scalar or an array with the same length as csv.')
+
         events[self.weight] *= (xs[ichannel] * lumi / np.sum(events[self.weight]))
         events_per_channel.append(events)
       self.events = pd.concat(events_per_channel)

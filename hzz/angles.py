@@ -58,7 +58,7 @@ def calculate(l1: MomentumObject4D, l2: MomentumObject4D, l3: MomentumObject4D, 
     # Calculate 𝜙1 ,𝜙
     phi = z1.dot(n12.cross(n34))/np.abs(z1.dot(n12.cross(n34)))*np.arccos(-n12.dot(n34))
 
-    legal_inds = np.where(~np.isnan(phi))[0]
+    #legal_inds = np.where(~np.isnan(phi))[0]
     # TODO: decide what to do if n12 and n34 are parallel
         
     phi1 = z1.dot(n12.cross(nscp))/np.abs(z1.dot(n12.cross(nscp)))*np.arccos(n12.dot(nscp))
@@ -78,6 +78,6 @@ def calculate(l1: MomentumObject4D, l2: MomentumObject4D, l3: MomentumObject4D, 
     cth2 = - z1_in_Z2.dot(l3.to_3D())/np.abs(z1_in_Z2.mag*l3.to_3D().mag)
 
     if tensorize:
-        return [tf.convert_to_tensor(np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass, m4l]).T), legal_inds]
+        return tf.convert_to_tensor(np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass, m4l]).T)
     else:
-        return [np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass, m4l]).T, legal_inds]
+        return np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass, m4l]).T

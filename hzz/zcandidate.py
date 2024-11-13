@@ -55,26 +55,51 @@ class ZmassPairChooser:
         lepton_pairs = vector.array([[[self.l1,self.l2],[self.l3,self.l4]],
                                       [[self.l1,self.l4],[self.l3,self.l2]]], dtype=[('px',float),('py',float),('pz',float),('E',float)])
 
+        del p12
+        del p14
+        del p23
+        del p34
+
+        print('Deleting refs p12, p23, p14, p34')
+
         # Chi squared minimization to determine the closest pair
         chi_sq = np.array([(pair[0].mass - self.Z_mass)**2 + (pair[1].mass - self.Z_mass)**2 for pair in pairs]).T
         closest_pair_indices = np.argmin(chi_sq, axis=1)
         closest_pair = pairs.transpose(2,0,1)[np.arange(len(closest_pair_indices)), closest_pair_indices].T
+
+        del chi_sq
+
+        print('Deleting ref chi_sq')
 
         # Determine the Z boson with the higher pT
         # That one will be Z1, the other one Z2
         pT_max_ind = np.argmax(closest_pair.pt,axis=0) # Z1
         pT_min_ind = np.argmin(closest_pair.pt,axis=0) # Z2
 
+        # Determine the order manually if both Z bosons have the same pT
         cond=(pT_max_ind==pT_min_ind)
 
         pT_max_ind[cond] = 0
         pT_min_ind[cond] = 1
+
+        del cond
+
+        print('Deleting ref cond')
 
         # Set Z1, Z2 and (l1_calc, l2_calc) = Z1; (l3_calc, l4_calc) = Z2
         self.Z1 = closest_pair.T[np.arange(len(pT_max_ind)),pT_max_ind]
         self.l1_calc, self.l2_calc = lepton_pairs.transpose(3,0,1,2)[np.arange(len(closest_pair_indices)), closest_pair_indices][np.arange(len(pT_max_ind)), pT_max_ind].T
         self.Z2 = closest_pair.T[np.arange(len(pT_min_ind)),pT_min_ind]
         self.l3_calc, self.l4_calc = lepton_pairs.transpose(3,0,1,2)[np.arange(len(closest_pair_indices)), closest_pair_indices][np.arange(len(pT_min_ind)), pT_min_ind].T
+
+        del pairs
+        del lepton_pairs
+        del closest_pair_indices
+        del closest_pair
+        del pT_max_ind
+        del pT_min_ind
+
+        print('Deleting refs pairs, lepton_pairs, closest_pair_indices, closest_pair, pT_max_ind, pT_min_ind')
 
         # Set Higgs four momentum
         self.H = self.Z1 + self.Z2
