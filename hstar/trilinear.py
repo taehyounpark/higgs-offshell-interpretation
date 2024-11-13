@@ -24,11 +24,11 @@ class Modifier():
       tot_modification = c6_modification
 
     else:
-      cH_modification = -2 * sample.reweight(self.component)[:,np.newaxis] * np.array(cH)
+      cH_modification = - sample.reweight(self.component)[:,np.newaxis] * np.array(cH)
 
-      c6_modification = c6_modification[:, :, np.newaxis]
+      c6_modification = c6_modification[:, np.newaxis, :]
 
-      cH_modification = cH_modification[:, np.newaxis, :]
+      cH_modification = cH_modification[:, :, np.newaxis]
 
       tot_modification = c6_modification + cH_modification 
 
