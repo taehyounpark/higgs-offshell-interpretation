@@ -108,13 +108,13 @@ os.makedirs(OUTPUT_DIR + '/ckpt/', exist_ok=True)
 os.makedirs(OUTPUT_DIR + '/models/', exist_ok=True)
 os.makedirs(OUTPUT_DIR + '/history/', exist_ok=True)
 
-checkpoint_filepath = OUTPUT_DIR + f'/ckpt/checkpoint.model_{GEN}.keras'
-model_checkpoint_callback = keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath, monitor='val_loss', mode='min', save_best_only=True)
+checkpoint_filepath = OUTPUT_DIR + f'/ckpt/checkpoint.model_{GEN}.tf'
+model_checkpoint_callback = keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath, monitor='val_loss', mode='min', save_best_only=True, save_format='tf')
 early_stopping_callback = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', patience=5, start_from_epoch=20)
 
 history_callback = model.fit(x=train_data[:,:8], y=train_data[:,8][:,np.newaxis], sample_weight=train_data[:,9][:,np.newaxis], validation_data=(val_data[:,:8], val_data[:,8], val_data[:,9]), batch_size=64, callbacks=[model_checkpoint_callback, early_stopping_callback], epochs=100, verbose=2)
 
-model.save(OUTPUT_DIR + f'/models/model_{GEN}.keras')
+model.save(OUTPUT_DIR + f'/models/model_{GEN}.tf', save_format='tf')
 
 with open(OUTPUT_DIR + f'/history/history_{GEN}.txt', 'w') as hist_file:
     hist_file.write(str(history_callback.history['loss']))
