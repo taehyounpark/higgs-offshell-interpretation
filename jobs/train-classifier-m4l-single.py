@@ -22,7 +22,7 @@ print('Number of GPUs available: ', len(tf.config.list_physical_devices('GPU')))
 
 SEED=373485
 GEN=2
-OUTPUT_DIR='../outputs/single/m4l'
+OUTPUT_DIR='../outputs/m4l/single'
 SAMPLE_DIR='../..'
 
 

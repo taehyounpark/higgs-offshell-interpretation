@@ -1,7 +1,7 @@
 #!/bin/bash -l
 # Standard output and error:
-#SBATCH -o ./logs/job.out.%j
-#SBATCH -e ./logs/job.err.%j
+#SBATCH -o ../logs/job.out.%j
+#SBATCH -e ../logs/job.err.%j
 # Initial working directory:
 #SBATCH -D ./
 # Job name
@@ -21,11 +21,12 @@
 # #SBATCH --partition=gpudev
 
 module purge
-module load python-waterboa/2024.06
+module load anaconda/3/2023.03 
+module load tensorflow/gpu-cuda-12.1/2.14.0 protobuf/4.24.0 mkl/2023.1 cuda/12.1 cudnn/8.9.2 nccl/2.18.3 tensorrt/8.6.1 tensorboard/2.13.0 keras/2.14.0 keras-preprocessing/1.1.2
 
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 
 export PYTHONUNBUFFERED=TRUE
 
-source ../../bsc-thesis/venv/bin/activate
-srun python run.py
+source ../../venv/bin/activate
+srun python train-classifier-toy.py

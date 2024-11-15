@@ -21,11 +21,11 @@
 # #SBATCH --partition=gpudev
 
 module purge
-module load python-waterboa/2024.06
+module load python-waterboa/2024.06 cuda/12.6
 
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 
 export PYTHONUNBUFFERED=TRUE
 
-source ../../bsc-thesis/venv/bin/activate
+source ../venv/bin/activate
 srun python run.py

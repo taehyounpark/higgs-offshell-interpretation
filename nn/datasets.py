@@ -9,10 +9,8 @@ def build_dataset(x_arr, param_values, signal_weights, background_weights, norma
     if np.isscalar(param_values):
         param_values = [param_values]
         non_prm=True
-        print('Non param')
     elif len(param_values) == 1:
         non_prm=True
-        print('Non param')
 
     for i in range(len(param_values)):
         param = param_values[i]
@@ -45,7 +43,7 @@ def build_dataset(x_arr, param_values, signal_weights, background_weights, norma
     return data
 
 
-def build_dataset_tf(x_arr, param_values, signal_weights, background_weights, normalization=1):
+def build_dataset_tf(x_arr, param_values, signal_weights, background_weights, normalization=1, scale_data=False):
     data = []
 
     non_prm=False
@@ -53,10 +51,8 @@ def build_dataset_tf(x_arr, param_values, signal_weights, background_weights, no
     if np.isscalar(param_values):
         param_values = [param_values]
         non_prm=True
-        print('Non param')
     elif len(param_values) == 1:
         non_prm=True
-        print('Non param')
 
     for i in range(len(param_values)):
         param = param_values[i]
