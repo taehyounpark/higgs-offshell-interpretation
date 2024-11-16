@@ -27,9 +27,9 @@ print('Number of devices: ', strategy.num_replicas_in_sync)
 SEED=373485
 GEN=2
 
-# GEN=2, SEED=373485: c6=20, maxi net (10 layers, 2k nodes each), (added early stopping) epochs=100, train:val = 50:50
+# GEN=2, SEED=373485: c6=-20,20 (2001), maxi net (10 layers, 2k nodes each), (added early stopping) epochs=100, train:val = 50:50
 
-OUTPUT_DIR='../outputs/single'
+OUTPUT_DIR='../outputs/def'
 SAMPLE_DIR='../..'
 
 sample = process.Sample(weight='wt', 
@@ -49,7 +49,7 @@ sample.open(csv = [
 
 print('Total events:', sample.events.shape[0])
 
-base_size = 500000 # for train and validation data each
+base_size = 10000 # for train and validation data each
 
 fraction = 2*base_size/sample.events.shape[0] # fraction of the dataset that is actually needed
 
@@ -64,7 +64,7 @@ true_size = kin_variables.shape[0]
 
 print(f'Initial base size set to {base_size}. Train and validation data will be {int(true_size/2)*2} each after Z mass cuts.')
 
-c6 = np.linspace(-20,20,41)
+c6 = np.linspace(-20,20,2001)
 
 c6_mod = trilinear.Modifier(c6_values = [-5,-1,0,1,5], c6_amplitudes = ['msq_sbi_c6_6', 'msq_sbi_c6_10', 'msq_sbi_c6_11', 'msq_sbi_c6_12', 'msq_sbi_c6_16'])
 c6_weights = c6_mod.modify(sample=sample, c6=c6)

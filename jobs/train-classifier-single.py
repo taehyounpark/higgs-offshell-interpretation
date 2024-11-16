@@ -25,9 +25,11 @@ strategy = tf.distribute.MirroredStrategy()
 print('Number of devices: ', strategy.num_replicas_in_sync)
 
 SEED=373485
-GEN=2
+GEN=4
 
-# GEN=2, SEED=373485: c6=20, maxi net (10 layers, 2k nodes each), (added early stopping) epochs=100, train:val = 50:50
+# GEN=2, SEED=373485: data: 1M, c6=20, maxi net (10 layers, 2k nodes each), (added early stopping) epochs=100, train:val = 50:50
+# GEN=3, SEED=373485: data: 1M, lr=0.03, c6=20, maxi net (10 layers, 2k nodes each), (added early stopping) epochs=150, train:val = 50:50
+# GEN=4, SEED=373485: data: 2M, lr=0.03, c6=20, maxi net (10 layers, 2k nodes each), (added early stopping) epochs=150, train:val = 50:50
 
 OUTPUT_DIR='../outputs/single'
 SAMPLE_DIR='../..'
@@ -49,7 +51,7 @@ sample.open(csv = [
 
 print('Total events:', sample.events.shape[0])
 
-base_size = 500000 # for train and validation data each
+base_size = 1000000 # for train and validation data each
 
 fraction = 2*base_size/sample.events.shape[0] # fraction of the dataset that is actually needed
 
@@ -96,7 +98,7 @@ print('val_data:', val_data, val_data.shape)
 model = models.C6_4l_clf_maxi_nonprm()
 
 optimizer = Nadam(
-    learning_rate=0.001,
+    learning_rate=0.003,
     beta_1=0.9,
     beta_2=0.999,
     epsilon=1e-07
@@ -110,9 +112,9 @@ os.makedirs(OUTPUT_DIR + '/history/', exist_ok=True)
 
 checkpoint_filepath = OUTPUT_DIR + f'/ckpt/checkpoint.model_{GEN}.tf'
 model_checkpoint_callback = keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath, monitor='val_loss', mode='min', save_best_only=True, save_format='tf')
-early_stopping_callback = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', patience=5, start_from_epoch=20)
+early_stopping_callback = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', patience=8, start_from_epoch=20)
 
-history_callback = model.fit(x=train_data[:,:8], y=train_data[:,8][:,np.newaxis], sample_weight=train_data[:,9][:,np.newaxis], validation_data=(val_data[:,:8], val_data[:,8], val_data[:,9]), batch_size=64, callbacks=[model_checkpoint_callback, early_stopping_callback], epochs=100, verbose=2)
+history_callback = model.fit(x=train_data[:,:8], y=train_data[:,8][:,np.newaxis], sample_weight=train_data[:,9][:,np.newaxis], validation_data=(val_data[:,:8], val_data[:,8], val_data[:,9]), batch_size=64, callbacks=[model_checkpoint_callback, early_stopping_callback], epochs=150, verbose=2)
 
 model.save(OUTPUT_DIR + f'/models/model_{GEN}.tf', save_format='tf')
 
