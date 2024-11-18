@@ -92,7 +92,7 @@ print(real_ratios, tf.math.reduce_min(real_ratios), tf.math.reduce_max(real_rati
 real = real_ratios.numpy()
 pred = ratios.numpy()
 
-lnspc = np.linspace(0.0,2.0)
+lnspc = np.linspace(0.6,1.4)
 
 plt.figure(figsize=(6,6))
 
