@@ -25,11 +25,15 @@ strategy = tf.distribute.MirroredStrategy()
 print('Number of devices: ', strategy.num_replicas_in_sync)
 
 SEED=373485
-GEN=4
+GEN=7
 
 # GEN=2, SEED=373485: data: 1M, c6=20, maxi net (10 layers, 2k nodes each), (added early stopping) epochs=100, train:val = 50:50
-# GEN=3, SEED=373485: data: 1M, lr=0.03, c6=20, maxi net (10 layers, 2k nodes each), (added early stopping) epochs=150, train:val = 50:50
-# GEN=4, SEED=373485: data: 2M, lr=0.03, c6=20, maxi net (10 layers, 2k nodes each), (added early stopping) epochs=150, train:val = 50:50
+# GEN=3, SEED=373485: data: 1M, lr=0.003, c6=20, maxi net (10 layers, 2k nodes each), (added early stopping) epochs=150, train:val = 50:50
+# GEN=4, SEED=373485: data: 2M, lr=0.003, c6=20, maxi net (10 layers, 2k nodes each), (added early stopping) epochs=150, train:val = 50:50
+# GEN=5, (was saved under 4) SEED=373485: (shuffled train, val) data: 2M, lr=0.002, c6=20, maxi net (10 layers, 2k nodes each), (no early stopping) epochs=250, train:val = 50:50
+# GEN=6, SEED=373485: data: 200k, lr=0.005, c6=-10, maxi net (10 layers, 2k nodes each), (early stopping after 20 epochs) epochs=250, train:val = 50:50
+# GEN=7, SEED=373485: data: 200k, lr=0.0001, c6=-10, maxi net (10 layers, 2k nodes each), (early stopping after 20 epochs) epochs=50, train:val = 50:50, batch_size=16
+# GEN=8, SEED=373485: data: 200k, lr=0.0001, c6=-10, maxi net (10 layers, 2k nodes each), (early stopping after 20 epochs) epochs=50, train:val = 50:50, batch_size=8
 
 OUTPUT_DIR='../outputs/single'
 SAMPLE_DIR='../..'
@@ -51,7 +55,7 @@ sample.open(csv = [
 
 print('Total events:', sample.events.shape[0])
 
-base_size = 1000000 # for train and validation data each
+base_size = 100000 # for train and validation data each
 
 fraction = 2*base_size/sample.events.shape[0] # fraction of the dataset that is actually needed
 
@@ -66,19 +70,19 @@ true_size = kin_variables.shape[0]
 
 print(f'Initial base size set to {base_size}. Train and validation data will be {int(true_size/2)*2} each after Z mass cuts.')
 
-c6 = 20
+c6 = [-10]
 
 c6_mod = trilinear.Modifier(c6_values = [-5,-1,0,1,5], c6_amplitudes = ['msq_sbi_c6_6', 'msq_sbi_c6_10', 'msq_sbi_c6_11', 'msq_sbi_c6_12', 'msq_sbi_c6_16'])
 c6_weights = c6_mod.modify(sample=sample, c6=c6)
 
 train_data = datasets.build_dataset_tf(x_arr = kin_variables[:int(true_size/2)], 
-                                       param_values = [c6], 
+                                       param_values = c6, 
                                        signal_weights = c6_weights[:int(true_size/2)], 
                                        background_weights = np.array(sample.events['wt'])[:int(true_size/2)],
                                        normalization = 1)
 
 val_data = datasets.build_dataset_tf(  x_arr = kin_variables[int(true_size/2):], 
-                                       param_values = [c6], 
+                                       param_values = c6, 
                                        signal_weights = c6_weights[int(true_size/2):], 
                                        background_weights = np.array(sample.events['wt'])[int(true_size/2):],
                                        normalization = 1)
@@ -88,17 +92,22 @@ val_data = datasets.build_dataset_tf(  x_arr = kin_variables[int(true_size/2):],
 train_scaler = StandardScaler()
 train_data = tf.concat([train_scaler.fit_transform(train_data[:,:8]), train_data[:,8:]], axis=1)
 
+train_data = tf.random.shuffle(train_data, seed=SEED)
+
 print('train_data:', train_data, train_data.shape)
 
-val_scaler = StandardScaler()
-val_data = tf.concat([val_scaler.fit_transform(val_data[:,:8]), val_data[:,8:]], axis=1)
+val_data = tf.concat([train_scaler.transform(val_data[:,:8]), val_data[:,8:]], axis=1)
+
+val_data = tf.random.shuffle(val_data, seed=SEED)
 
 print('val_data:', val_data, val_data.shape)
+
+print(f'StandardScaler params: mu={train_scaler.mean_.tolist()}, variance={train_scaler.var_.tolist()}')
 
 model = models.C6_4l_clf_maxi_nonprm()
 
 optimizer = Nadam(
-    learning_rate=0.003,
+    learning_rate=0.0001,
     beta_1=0.9,
     beta_2=0.999,
     epsilon=1e-07
@@ -112,9 +121,9 @@ os.makedirs(OUTPUT_DIR + '/history/', exist_ok=True)
 
 checkpoint_filepath = OUTPUT_DIR + f'/ckpt/checkpoint.model_{GEN}.tf'
 model_checkpoint_callback = keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath, monitor='val_loss', mode='min', save_best_only=True, save_format='tf')
-early_stopping_callback = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', patience=8, start_from_epoch=20)
+early_stopping_callback = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', patience=20, start_from_epoch=20)
 
-history_callback = model.fit(x=train_data[:,:8], y=train_data[:,8][:,np.newaxis], sample_weight=train_data[:,9][:,np.newaxis], validation_data=(val_data[:,:8], val_data[:,8], val_data[:,9]), batch_size=64, callbacks=[model_checkpoint_callback, early_stopping_callback], epochs=150, verbose=2)
+history_callback = model.fit(x=train_data[:,:8], y=train_data[:,8][:,np.newaxis], sample_weight=train_data[:,9][:,np.newaxis], validation_data=(val_data[:,:8], val_data[:,8], val_data[:,9]), batch_size=16, callbacks=[model_checkpoint_callback], epochs=50, verbose=2)
 
 model.save(OUTPUT_DIR + f'/models/model_{GEN}.tf', save_format='tf')
 

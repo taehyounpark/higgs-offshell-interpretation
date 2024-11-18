@@ -10,8 +10,8 @@
 #SBATCH --ntasks=1
 #SBATCH --constraint="gpu"
 #
-#SBATCH --gres=gpu:a100:1
-#SBATCH --cpus-per-task=18
+#SBATCH --gres=gpu:a100:2
+#SBATCH --cpus-per-task=36
 #SBATCH --mem=100000
 
 #SBATCH --mail-type=none
