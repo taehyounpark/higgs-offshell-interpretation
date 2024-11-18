@@ -13,7 +13,7 @@ from hzz import angles
 
 from nn import datasets
 from nn import models
-from nn.models import C6_4l_clf_maxi_nonprm, swish_activation
+from nn.models import C6_4l_clf_maxi_nonprm, swish_activation, C6_4l_clf_big_nonprm
 
 import numpy as np
 
@@ -26,7 +26,7 @@ strategy = tf.distribute.MirroredStrategy()
 print('Number of devices: ', strategy.num_replicas_in_sync)
 
 SEED=373485
-GEN=8
+GEN=9
 
 # GEN=2, SEED=373485: data: 1M, c6=20, maxi net (10 layers, 2k nodes each), (added early stopping) epochs=100, train:val = 50:50
 # GEN=3, SEED=373485: data: 1M, lr=0.003, c6=20, maxi net (10 layers, 2k nodes each), (added early stopping) epochs=150, train:val = 50:50
@@ -35,6 +35,8 @@ GEN=8
 # GEN=6, SEED=373485: data: 200k, lr=0.005, c6=-10, maxi net (10 layers, 2k nodes each), (early stopping after 20 epochs) epochs=250, train:val = 50:50
 # GEN=7, SEED=373485: data: 200k, lr=0.0001, c6=-10, maxi net (10 layers, 2k nodes each), (early stopping after 20 epochs) epochs=50, train:val = 50:50, batch_size=16
 # GEN=8,(continuing from GEN 7 checkpoint) SEED=373485: data: 1M, lr=0.0001, c6=-10, maxi net (10 layers, 2k nodes each), (early stopping after 20 epochs) epochs=100, train:val = 50:50, batch_size=32
+# GEN=9,(same as GEN 7, but higher complexity, lower batch size) SEED=373485: data: 200k, lr=0.0001, c6=-10, big net (10 layers, 2.5k nodes each), (early stopping after 20 epochs) epochs=50, train:val = 50:50, batch_size=8
+
 
 OUTPUT_DIR='../outputs/single'
 SAMPLE_DIR='../..'
@@ -56,7 +58,7 @@ sample.open(csv = [
 
 print('Total events:', sample.events.shape[0])
 
-base_size = 500000 # for train and validation data each
+base_size = 100000 # for train and validation data each
 
 fraction = 2*base_size/sample.events.shape[0] # fraction of the dataset that is actually needed
 
@@ -105,7 +107,7 @@ print('val_data:', val_data, val_data.shape)
 
 print(f'StandardScaler params: mu={train_scaler.mean_.tolist()}, variance={train_scaler.var_.tolist()}, sigma={train_scaler.scale_.tolist()}')
 
-model = models.C6_4l_clf_maxi_nonprm()
+model = models.C6_4l_clf_big_nonprm()
 
 optimizer = Nadam(
     learning_rate=0.0001,
@@ -117,7 +119,7 @@ optimizer = Nadam(
 model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['binary_accuracy'], weighted_metrics=['binary_accuracy'])
 
 # Load old checkpoint
-model = keras.models.load_model(OUTPUT_DIR + f'/ckpt/checkpoint.model_7.tf', custom_objects={'C6_4l_clf_maxi_nonprm': C6_4l_clf_maxi_nonprm, 'swish_activation': swish_activation})
+#model = keras.models.load_model(OUTPUT_DIR + f'/ckpt/checkpoint.model_7.tf', custom_objects={'C6_4l_clf_maxi_nonprm': C6_4l_clf_maxi_nonprm, 'swish_activation': swish_activation})
 
 os.makedirs(OUTPUT_DIR + '/ckpt/', exist_ok=True)
 os.makedirs(OUTPUT_DIR + '/models/', exist_ok=True)
@@ -127,7 +129,7 @@ checkpoint_filepath = OUTPUT_DIR + f'/ckpt/checkpoint.model_{GEN}.tf'
 model_checkpoint_callback = keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath, monitor='val_loss', mode='min', save_best_only=True, save_format='tf')
 early_stopping_callback = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', patience=20, start_from_epoch=20)
 
-history_callback = model.fit(x=train_data[:,:8], y=train_data[:,8][:,np.newaxis], sample_weight=train_data[:,9][:,np.newaxis], validation_data=(val_data[:,:8], val_data[:,8], val_data[:,9]), batch_size=32, callbacks=[model_checkpoint_callback], epochs=100, verbose=2)
+history_callback = model.fit(x=train_data[:,:8], y=train_data[:,8][:,np.newaxis], sample_weight=train_data[:,9][:,np.newaxis], validation_data=(val_data[:,:8], val_data[:,8], val_data[:,9]), batch_size=8, callbacks=[model_checkpoint_callback], epochs=50, verbose=2)
 
 model.save(OUTPUT_DIR + f'/models/model_{GEN}.tf', save_format='tf')
 
