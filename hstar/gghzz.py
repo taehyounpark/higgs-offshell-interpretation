@@ -42,7 +42,7 @@ class Process():
     self.events.kinematics = pd.concat(kinematics_per_channel)
     self.events.amplitudes = pd.concat(amplitudes_per_channel)
     self.events.weights = pd.concat(weights_per_channel)
-    self.events.probailities = pd.concat(probabilities_per_channel)
+    self.events.probabilities = pd.concat(probabilities_per_channel)
 
   def __getitem__(self, component):
     events = Events()

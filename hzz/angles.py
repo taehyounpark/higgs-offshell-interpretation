@@ -1,10 +1,9 @@
 import numpy as np
 import vector
 from vector import MomentumObject4D
-import tensorflow as tf
 
 
-def calculate(l1: MomentumObject4D, l2: MomentumObject4D, l3: MomentumObject4D, l4: MomentumObject4D, tensorize: bool=False) -> np.ndarray:
+def calculate(l1: MomentumObject4D, l2: MomentumObject4D, l3: MomentumObject4D, l4: MomentumObject4D) -> np.ndarray:
     """
     Calculates kinematic variables cos 𝜃∗, cos 𝜃1, cos 𝜃2, 𝜙1 ,𝜙, mZ1 and mZ2. 
     Angles used are described in https://journals.aps.org/prd/pdf/10.1103/PhysRevD.86.095031.
@@ -14,7 +13,6 @@ def calculate(l1: MomentumObject4D, l2: MomentumObject4D, l3: MomentumObject4D, 
         l2 (MomentumObject4D): Lepton 2 used in calculations. Must be positive and paired up with l1 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
         l3 (MomentumObject4D): Lepton 3 used in calculations. Must be negative and paired up with l4 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
         l4 (MomentumObject4D): Lepton 4 used in calculations. Must be positive and paired up with l3 to form a Z boson. Can also be a vector array of MomentumObject4D objects.
-        tensorize (bool): If True, the output will be converted to a tensorflow tensor. False by default.
 
     Returns:
         np.ndarray: The kinematic variables in form of [cos 𝜃∗, cos 𝜃1, cos 𝜃2, 𝜙1 ,𝜙, mZ1, mZ2].
@@ -76,8 +74,5 @@ def calculate(l1: MomentumObject4D, l2: MomentumObject4D, l3: MomentumObject4D, 
     # Calculate cos 𝜃1, cos 𝜃2
     cth1 = - z2_in_Z1.dot(l1.to_3D())/np.abs(z2_in_Z1.mag*l1.to_3D().mag)
     cth2 = - z1_in_Z2.dot(l3.to_3D())/np.abs(z1_in_Z2.mag*l3.to_3D().mag)
-
-    if tensorize:
-        return tf.convert_to_tensor(np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass, m4l]).T)
-    else:
-        return np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass, m4l]).T
+    
+    return np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass, m4l]).T
