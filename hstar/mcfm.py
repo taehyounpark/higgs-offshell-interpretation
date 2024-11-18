@@ -1,4 +1,4 @@
-from .amplitude import Component
+from .msq import Component
 
 weight = 'wt'
 

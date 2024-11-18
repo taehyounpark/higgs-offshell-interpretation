@@ -1,10 +1,10 @@
 import numpy as np
 
-from . import amplitude, mcfm
+from . import mcfm, msq
 
 class Modifier():
 
-  def __init__(self, amplitude_component = amplitude.Component.SBI, c6_values = [-5,-1,0,1,5]):
+  def __init__(self, amplitude_component = msq.Component.SBI, c6_values = [-5,-1,0,1,5]):
     self.amplitude_component = amplitude_component
     self.c6_values = np.array(c6_values)
     self.c6_amplitudes = [mcfm.amplitude_c6[amplitude_component][c6_value] for c6_value in c6_values]

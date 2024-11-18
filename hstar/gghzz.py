@@ -1,8 +1,6 @@
-import numpy as np
-import pandas as pd
 from enum import Enum
-
-from . import mcfm, amplitude
+import pandas as pd
+from . import mcfm, msq
 
 class Channel(Enum):
   ELEL = 1
@@ -37,7 +35,7 @@ class Process():
       amplitudes_per_channel.append(df[mcfm.amplitudes])
       weights = df[mcfm.weight]
       # normalize
-      weights *= xsec / np.sum(weights) 
+      weights *= xsec / weights.sum() 
       weights_per_channel.append(weights)
       probabilities_per_channel.append(weights / xsec)
 
@@ -51,5 +49,5 @@ class Process():
     events.kinematics = self.events.kinematics
     events.amplitudes = self.events.amplitudes
     events.weights = self.events.weights * events.amplitudes[mcfm.amplitude_sm[component]] / events.amplitudes[mcfm.amplitude_base]
-    events.probabilities = events.weights / np.sum(events.weights)
+    events.probabilities = events.weights / events.weights.sum()
     return events
