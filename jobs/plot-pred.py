@@ -6,8 +6,8 @@ from tensorflow import keras
 
 from nn.models import C6_4l_clf_maxi, swish_activation
 from nn import datasets
-from hstar import process, trilinear
-from hzz import zcandidate, angles
+from hstar import gghzz, c6, msq
+from hzz import zpair, angles
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,59 +16,48 @@ from sklearn.preprocessing import StandardScaler
 
 SEED=373485
 GEN=4
+
+EVENT_NUM = 10000
+
 OUTPUT_DIR='../outputs/def'
 SAMPLE_DIR='../..'
 
-sample = process.Sample(weight='wt', 
-    amplitude = process.Basis.SBI, components = {
-    process.Basis.SBI: 'msq_sbi_sm',
-    process.Basis.SIG: 'msq_sig_sm',
-    process.Basis.BKG: 'msq_bkg_sm',
-    process.Basis.INT: 'msq_int_sm'
-  })
-
-sample.open(csv = [
-  SAMPLE_DIR + '/ggZZ2e2m_all_new.csv',
-  SAMPLE_DIR + '/ggZZ4e_all_new.csv',
-  SAMPLE_DIR + '/ggZZ4m_all_new.csv'
-  ], xs=[1.4783394, 0.47412769, 0.47412769], lumi=3000., k=1.83
+sample = gghzz.Process(  
+    (1.4783394, SAMPLE_DIR + '/ggZZ2e2m_all_new.csv', 1e6),
+    (0.47412769, SAMPLE_DIR + '/ggZZ4e_all_new.csv', 1e6),
+    (0.47412769, SAMPLE_DIR + '/ggZZ4m_all_new.csv', 1e6)
 )
 
-base_size = 10000 # for train and validation data each
+base_size = EVENT_NUM # for train and validation data each
 
 fraction = 3*base_size/sample.events.shape[0] # fraction of the dataset that is actually needed
 
-sample.events = sample.events.sample(frac=fraction, random_state=SEED, ignore_index=True)[-base_size:]
+sample.events = sample.events.sample(frac=fraction, random_state=SEED)[-base_size:]
 
-print(sample.events.shape)
+z_chooser = zpair.ZPairChooser(bounds1=(50,115), bounds2=(50,115), algorithm='leastsquare')
+l1_1, l2_1, l1_2, l2_2 = sample.events.filter(z_chooser)
 
-zmasses = zcandidate.ZmassPairChooser(sample)
-leptons = zmasses.find_Z()
-
-print(sample.events.shape)
-
-kin_variables = angles.calculate(leptons.T[0], leptons.T[1], leptons.T[2], leptons.T[3])
-
-print(sample.events.shape)
+kin_variables = angles.calculate(l1_1, l2_1, l1_2, l2_2)
 
 c6_values = np.linspace(-20,20,21)
 
-c6_mod = trilinear.Modifier(c6_values = [-5,-1,0,1,5], c6_amplitudes = ['msq_sbi_c6_6', 'msq_sbi_c6_10', 'msq_sbi_c6_11', 'msq_sbi_c6_12', 'msq_sbi_c6_16'])
-c6_weights = c6_mod.modify(sample=sample, c6=c6_values)
+c6_mod = c6.Modifier(amplitude_component = msq.Component.SBI, c6_values = [-5,-1,0,1,5])
+c6_weights, c6_prob = c6_mod.modify(sample=sample, c6=c6_values)
 
 test_data = []
 
-for i in range(len(c6_values)):  
-  sig_weights = tf.convert_to_tensor(c6_weights.T[i])[:,tf.newaxis]
-  sig_weights *= 1/tf.reduce_sum(sig_weights)
+scaler = StandardScaler()
+scaler.mean_ = 0.0 # change
+scaler.scale_ = 0.0 # change
 
-  bkg_weights = tf.convert_to_tensor(sample.events['wt'])[:,tf.newaxis]
-  bkg_weights *= 1/tf.reduce_sum(bkg_weights)
+for i in range(len(c6_values)):
+  sig_weights = tf.convert_to_tensor(c6_prob.T[i])[:,tf.newaxis]
+
+  bkg_weights = tf.convert_to_tensor(sample.events.probabilities)[:,tf.newaxis]
 
   test_data_i = tf.concat([tf.convert_to_tensor(kin_variables),sig_weights, bkg_weights], axis=1)
 
-  scaler = StandardScaler()
-  test_data_i = tf.concat([scaler.fit_transform(test_data_i[:,:8]), test_data_i[:,8:]], axis=1)
+  test_data_i = tf.concat([scaler.transform(test_data_i[:,:8]), test_data_i[:,8:]], axis=1)
 
   test_data.append(test_data_i)
 
@@ -77,7 +66,6 @@ test_data = tf.convert_to_tensor(test_data)
 print(test_data.shape)
 
 model = keras.models.load_model(OUTPUT_DIR + f'/ckpt/checkpoint.model_{GEN}.tf', custom_objects={'C6_4l_clf_maxi': C6_4l_clf_maxi, 'swish_activation': swish_activation})
-
 
 arr_len = test_data.shape[0]/len(c6_values)
 

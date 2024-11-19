@@ -2,6 +2,8 @@ from enum import Enum
 import pandas as pd
 from . import mcfm, msq
 
+import numpy as np
+
 class Channel(Enum):
   ELEL = 1
   MUMU = 2
@@ -15,6 +17,36 @@ class Events():
     self.weights = None
     self.probabilities = None
 
+  def filter(self, obj_instance):
+    indices, output = obj_instance.filter(self)
+
+    self.kinematics = self.kinematics.take(indices)
+    self.amplitudes = self.amplitudes.take(indices)
+    self.weights = self.weights.take(indices)
+    self.probabilities = self.weights/self.weights.sum()
+
+    return output
+
+  def shuffle(self, random_state=None):
+    events = Events()
+
+    events.kinematics = self.kinematics.sample(frac=1.0, random_state=random_state, ignore_index=True)
+    events.amplitudes = self.amplitudes.sample(frac=1.0, random_state=random_state, ignore_index=True)
+    events.weights = self.weights.sample(frac=1.0, random_state=random_state, ignore_index=True)
+    events.probabilities = self.probabilities.sample(frac=1.0, random_state=random_state, ignore_index=True)
+
+    return events
+  
+  def sample(self, frac=1.0, random_state=None):
+    events = Events()
+
+    events.kinematics = self.kinematics.sample(frac=frac, random_state=random_state, ignore_index=True)
+    events.amplitudes = self.amplitudes.sample(frac=frac, random_state=random_state, ignore_index=True)
+    events.weights = self.weights.sample(frac=frac, random_state=random_state, ignore_index=True)
+    events.probabilities = self.probabilities.sample(frac=frac, random_state=random_state, ignore_index=True)
+
+    return events
+
 class Process():
 
   def __init__(self, *channels):
@@ -24,7 +56,6 @@ class Process():
     kinematics_per_channel = []
     amplitudes_per_channel = []
     weights_per_channel = []
-    probabilities_per_channel = []
 
     for sample_from_channel in channels:
       xsec = sample_from_channel[0]
@@ -37,12 +68,11 @@ class Process():
       # normalize
       weights *= xsec / weights.sum() 
       weights_per_channel.append(weights)
-      probabilities_per_channel.append(weights / xsec)
 
     self.events.kinematics = pd.concat(kinematics_per_channel)
     self.events.amplitudes = pd.concat(amplitudes_per_channel)
     self.events.weights = pd.concat(weights_per_channel)
-    self.events.probabilities = pd.concat(probabilities_per_channel)
+    self.events.probabilities = self.events.weights/self.events.weights.sum()
 
   def __getitem__(self, component):
     events = Events()

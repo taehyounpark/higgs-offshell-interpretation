@@ -5,14 +5,11 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.optimizers import Nadam 
 
-from hstar import process
-from hstar import trilinear
+from hstar import gghzz, c6, msq
 
-from hzz import zcandidate
-from hzz import angles
+from hzz import zpair, angles
 
-from nn import datasets
-from nn import models
+from nn import datasets, models
 
 import numpy as np
 
@@ -35,36 +32,34 @@ GEN=7
 # GEN=7, SEED=373485: data: 200k, lr=0.0001, c6=-10, maxi net (10 layers, 2k nodes each), (early stopping after 20 epochs) epochs=50, train:val = 50:50, batch_size=16
 # GEN=8, SEED=373485: data: 200k, lr=0.0001, c6=-10, maxi net (10 layers, 2k nodes each), (early stopping after 20 epochs) epochs=50, train:val = 50:50, batch_size=8
 
+LEARN_RATE=1e-4
+BATCH_SIZE=16
+EPOCHS=50
+EVENTS_PER_CLASS=100000
+
+print(f'Training (classifier-single) GEN={GEN} with SEED={SEED} on {EVENTS_PER_CLASS} individual events. ML params: lr={LEARN_RATE}, batch_size={BATCH_SIZE}, epochs={EPOCHS}')
+
 OUTPUT_DIR='../outputs/single'
 SAMPLE_DIR='../..'
 
-sample = process.Sample(weight='wt', 
-    amplitude = process.Basis.SBI, components = {
-    process.Basis.SBI: 'msq_sbi_sm',
-    process.Basis.SIG: 'msq_sig_sm',
-    process.Basis.BKG: 'msq_bkg_sm',
-    process.Basis.INT: 'msq_int_sm'
-  })
-
-sample.open(csv = [
-  SAMPLE_DIR + '/ggZZ2e2m_all_new.csv',
-  SAMPLE_DIR + '/ggZZ4e_all_new.csv',
-  SAMPLE_DIR + '/ggZZ4m_all_new.csv'
-  ], xs=[1.4783394, 0.47412769, 0.47412769], lumi=3000., k=1.83
+sample = gghzz.Process(  
+    (1.4783394, SAMPLE_DIR + '/ggZZ2e2m_all_new.csv', 1e6),
+    (0.47412769, SAMPLE_DIR + '/ggZZ4e_all_new.csv', 1e6),
+    (0.47412769, SAMPLE_DIR + '/ggZZ4m_all_new.csv', 1e6)
 )
 
-print('Total events:', sample.events.shape[0])
+print('Total events:', sample.events.kinematics.shape[0])
 
-base_size = 100000 # for train and validation data each
+base_size = EVENTS_PER_CLASS # for train and validation data each
 
 fraction = 2*base_size/sample.events.shape[0] # fraction of the dataset that is actually needed
 
-sample.events = sample.events.sample(frac=fraction, random_state=SEED, ignore_index=True) # shuffle dataset and take out the specified fraction
+sample.events = sample.events.sample(frac=fraction, random_state=SEED) # shuffle dataset and take out the specified fraction
 
-zmasses = zcandidate.ZmassPairChooser(sample)
-leptons = zmasses.find_Z()
+z_chooser = zpair.ZPairChooser(bounds1=(50,115), bounds2=(50,115), algorithm='leastsquare')
+l1_1, l2_1, l1_2, l2_2 = sample.events.filter(z_chooser)
 
-kin_variables  = angles.calculate(leptons.T[0], leptons.T[1], leptons.T[2], leptons.T[3])
+kin_variables  = angles.calculate(l1_1, l2_1, l1_2, l2_2)
 
 true_size = kin_variables.shape[0]
 
@@ -72,8 +67,8 @@ print(f'Initial base size set to {base_size}. Train and validation data will be 
 
 c6 = [-10]
 
-c6_mod = trilinear.Modifier(c6_values = [-5,-1,0,1,5], c6_amplitudes = ['msq_sbi_c6_6', 'msq_sbi_c6_10', 'msq_sbi_c6_11', 'msq_sbi_c6_12', 'msq_sbi_c6_16'])
-c6_weights = c6_mod.modify(sample=sample, c6=c6)
+c6_mod = c6.Modifier(amplitude_component = msq.Component.SBI, c6_values = [-5,-1,0,1,5])
+c6_weights, c6_prob = c6_mod.modify(sample=sample, c6=c6)
 
 train_data = datasets.build_dataset_tf(x_arr = kin_variables[:int(true_size/2)], 
                                        param_values = c6, 
@@ -86,7 +81,6 @@ val_data = datasets.build_dataset_tf(  x_arr = kin_variables[int(true_size/2):],
                                        signal_weights = c6_weights[int(true_size/2):], 
                                        background_weights = np.array(sample.events['wt'])[int(true_size/2):],
                                        normalization = 1)
-
 
 
 train_scaler = StandardScaler()
@@ -102,12 +96,12 @@ val_data = tf.random.shuffle(val_data, seed=SEED)
 
 print('val_data:', val_data, val_data.shape)
 
-print(f'StandardScaler params: mu={train_scaler.mean_.tolist()}, variance={train_scaler.var_.tolist()}')
+print(f'StandardScaler params: mu={train_scaler.mean_.tolist()}, variance={train_scaler.var_.tolist()}, scale={train_scaler.scale_.tolist()}')
 
 model = models.C6_4l_clf_maxi_nonprm()
 
 optimizer = Nadam(
-    learning_rate=0.0001,
+    learning_rate=LEARN_RATE,
     beta_1=0.9,
     beta_2=0.999,
     epsilon=1e-07
@@ -123,7 +117,7 @@ checkpoint_filepath = OUTPUT_DIR + f'/ckpt/checkpoint.model_{GEN}.tf'
 model_checkpoint_callback = keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath, monitor='val_loss', mode='min', save_best_only=True, save_format='tf')
 early_stopping_callback = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', patience=20, start_from_epoch=20)
 
-history_callback = model.fit(x=train_data[:,:8], y=train_data[:,8][:,np.newaxis], sample_weight=train_data[:,9][:,np.newaxis], validation_data=(val_data[:,:8], val_data[:,8], val_data[:,9]), batch_size=16, callbacks=[model_checkpoint_callback], epochs=50, verbose=2)
+history_callback = model.fit(x=train_data[:,:8], y=train_data[:,8][:,np.newaxis], sample_weight=train_data[:,9][:,np.newaxis], validation_data=(val_data[:,:8], val_data[:,8], val_data[:,9]), batch_size=BATCH_SIZE, callbacks=[model_checkpoint_callback], epochs=EPOCHS, verbose=2)
 
 model.save(OUTPUT_DIR + f'/models/model_{GEN}.tf', save_format='tf')
 
