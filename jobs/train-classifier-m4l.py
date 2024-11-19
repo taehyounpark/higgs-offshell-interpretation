@@ -27,7 +27,7 @@ BATCH_SIZE=64
 EPOCHS=100
 EVENTS_PER_CLASS=3000
 
-print(f'Training (classifier-single) GEN={GEN} with SEED={SEED} on {EVENTS_PER_CLASS} individual events. ML params: lr={LEARN_RATE}, batch_size={BATCH_SIZE}, epochs={EPOCHS}')
+print(f'Training (classifier-m4l) GEN={GEN} with SEED={SEED} on {EVENTS_PER_CLASS} individual events. ML params: lr={LEARN_RATE}, batch_size={BATCH_SIZE}, epochs={EPOCHS}')
 
 OUTPUT_DIR='../outputs/m4l/def'
 SAMPLE_DIR='../..'
