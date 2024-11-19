@@ -1,17 +1,5 @@
-# Higgs trilinear sensitivity studies
+# Higgs off-shell interpretation
 
-- Validation of MCFM events
-- Matrix element morphing
-- Statistical sensitivity
-
-## Setup
-
-- Requirements:
-  - Python 3
-  - NumPy
-  - Pandas
-
-```sh
-module purge
-module load anaconda/3/2023.03
-```
+- MCFM $gg(\to h^{\ast})\to ZZ$ event generation validation
+- Per-event $|\mathcal{M}(c_6)|^2$ morphing
+- Expected sensitivity through simulation-based inference

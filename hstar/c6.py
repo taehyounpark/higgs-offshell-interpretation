@@ -1,60 +1,37 @@
 import numpy as np
-import pandas as pd
 
-class Sample():
+from . import mcfm, msq
 
-  def __init__(self, xs, events, *, k=1.0):
-    self.sm_xs = xs * k
-    self.sm_wt_key = 'wt'
-    self.sm_msq_key = 'msq_sm'
-    self.c6_msq_map = {
-      -5 : 'msq_c6_6',
-      -1 : 'msq_c6_10',
-      0 : 'msq_c6_11',
-      1 : 'msq_c6_12',
-      5 : 'msq_c6_16'
-    }
-    self.events = events
+class Modifier():
 
-  def normalize(self, lumi):
-    self.events[self.sm_wt_key] *= self.sm_xs * lumi / np.sum(self.events[self.sm_wt_key])
-    return self.events
+  def __init__(self, amplitude_component = msq.Component.SBI, c6_values = [-5,-1,0,1,5]):
+    self.amplitude_component = amplitude_component
+    self.c6_values = np.array(c6_values)
+    self.c6_amplitudes = [mcfm.amplitude_c6[amplitude_component][c6_value] for c6_value in c6_values]
 
-  def _morph_msq_per_event(self, c6):
-    c6_vals = np.array(list(self.c6_msq_map.keys()))
-    msq_c6 = np.array([self.events[c6_msq_key] for c6_msq_key in self.c6_msq_map.values()]).T
-    msq_sm = np.array(self.events[self.sm_msq_key])
-    
+  def modify(self, sample, c6):
+
+    if np.isscalar(c6):
+      c6 = [c6]
+
+    events = sample[self.amplitude_component]
+
+    msq_c6 = np.array([events.amplitudes[c6_amplitude].to_numpy() for c6_amplitude in self.c6_amplitudes]).T
+    msq_sm = events.amplitudes[mcfm.amplitude_sm[self.amplitude_component]].to_numpy()
+
     # Solve the polynomial for each row
-    coeffs = np.apply_along_axis(lambda x: np.linalg.solve(np.vander(c6_vals, len(c6_vals), increasing=True), x), 1, msq_c6 / msq_sm[:, np.newaxis])[:, ::-1]
-    
+    coeffs = np.apply_along_axis(lambda x: np.linalg.solve(np.vander(self.c6_values, len(self.c6_values), increasing=True), x), 1, msq_c6 / msq_sm[:, np.newaxis])[:, ::-1]
+
     # Evaluate the polynomial at c6 for each row
-    return np.array([np.polyval(coeffs[i], c6) for i in range(len(coeffs))])
-      
-  def msq(self, c6=None):
-    """
-    Returns the matrix element (squared) for a given set of events.
+    wt_c6 = events.weights.to_numpy()[:,np.newaxis] * np.apply_along_axis(lambda x: np.polyval(x, np.array(c6)), 1, coeffs)
+    prob_c6 = wt_c6 / np.sum(wt_c6, axis=0)
 
-    Parameters:
-      c6 (float or array-like, optional): The value(s) of the Wilson coefficient c6.
-        If None, returns the Standard Model value. If a scalar, returns the matrix element
-        morphed, i.e. inter-/extra-polated, to the given C6 value. If an array, returns the value morphed to
-        each value in the array.
+    return (wt_c6, prob_c6)
 
-    Returns:
-      numpy.ndarray: The matrix element value(s) for the given events under the specified c6 value(s).
-    """
-    if c6 is None:
-      return np.array(self.events[self.sm_msq_key])
-    elif np.isscalar(c6):
-      return self._morph_msq_per_event(c6) * np.array(self.events[self.sm_msq_key])
-    else:
-      return self._morph_msq_per_event(c6) * np.array(self.events[self.sm_msq_key])[:, np.newaxis]
+      # cH_modification = -1.0 * events.weights[:,np.newaxis] * np.array(cH)
 
-  def nu(self, c6=None, per_event=False):
-    if c6 is None:
-      return np.array(self.events[self.sm_wt_key]) if per_event else np.sum(self.events[self.sm_wt_key])
-    elif np.isscalar(c6):
-      return np.array(self.events[self.sm_wt_key] * self._morph_msq_per_event(c6)) if per_event else np.sum(self.events[self.sm_wt_key] * self._morph_msq_per_event(c6))
-    else:
-      return np.array(self.events[self.sm_wt_key])[:, np.newaxis] * self._morph_msq_per_event(c6) if per_event else np.sum(np.array(self.events[self.sm_wt_key])[:, np.newaxis] * self._morph_msq_per_event(c6), axis=0)
+      # c6_modification = c6_modification[:, np.newaxis, :]
+
+      # cH_modification = cH_modification[:, :, np.newaxis]
+
+      # tot_modification = c6_modification + cH_modification 
