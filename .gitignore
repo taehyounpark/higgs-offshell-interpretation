@@ -3,3 +3,8 @@ __pycache__/
 *.dat
 *.csv
 *.pdf
+*.out.*
+*.err.*
+*.keras
+*history*.txt
+*.tf/
