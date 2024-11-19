@@ -76,7 +76,7 @@ class C6_4l_clf_maxi_nonprm(Model):
 @keras.utils.register_keras_serializable()
 class C6_4l_clf_big_nonprm(Model):
     def __init__(self, **kwargs):
-        super(C6_4l_clf_maxi_nonprm, self).__init__(**kwargs)
+        super(C6_4l_clf_big_nonprm, self).__init__(**kwargs)
         
         swish = Activation(swish_activation, name='Swish')
 
