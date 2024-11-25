@@ -10,13 +10,13 @@
 #SBATCH --ntasks=1
 #SBATCH --constraint="gpu"
 #
-#SBATCH --gres=gpu:a100:2
-#SBATCH --cpus-per-task=36
+#SBATCH --gres=gpu:a100:1
+#SBATCH --cpus-per-task=18
 #SBATCH --mem=100000
 
 #SBATCH --mail-type=none
 #SBATCH --mail-user=griesemx@mpp.mpg.de
-#SBATCH --time=24:00:00
+#SBATCH --time=2:00:00
 
 # #SBATCH --partition=gpudev
 

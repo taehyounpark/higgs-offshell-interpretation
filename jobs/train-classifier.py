@@ -22,17 +22,18 @@ strategy = tf.distribute.MirroredStrategy()
 print('Number of devices: ', strategy.num_replicas_in_sync)
 
 SEED=373485
-GEN=5
+GEN=6
 
 # GEN=2, SEED=373485: c6=-20,20 (2001), maxi net (10 layers, 2k nodes each), (added early stopping) epochs=100, train:val = 50:50
 # GEN=3, SEED=373485: (shuffled data), lr=0.002 c6=-20,20 (2001), maxi net (10 layers, 2k nodes each), (added early stopping) epochs=100, train:val = 50:50
 # GEN=4, SEED=373485: half data (5k), (shuffled data), lr=0.002 c6=-20,20 (2001), maxi net (10 layers, 2k nodes each), (added early stopping) epochs=100, train:val = 50:50
 # GEN=5, SEED=373485: data=10k, (shuffled data), lr=0.0001 c6=-20,20 (201), maxi net (10 layers, 2k nodes each), (added early stopping) epochs=150, train:val = 50:50
+# GEN=6, SEED=373485: data=1k, (not shuffled data), lr=1e-5 c6=-20,20 (2001), maxi net (10 layers, 2k nodes each), (added early stopping) epochs=150, train:val = 50:50
 
-LEARN_RATE=1e-4
+LEARN_RATE=1e-5
 BATCH_SIZE=32
 EPOCHS=150
-EVENTS_PER_CLASS=10000
+EVENTS_PER_CLASS=99e2
 
 OUTPUT_DIR='../outputs/def'
 SAMPLE_DIR='../..'
@@ -40,18 +41,18 @@ SAMPLE_DIR='../..'
 print(f'Training (classifier) GEN={GEN} with SEED={SEED} on {EVENTS_PER_CLASS} individual events. ML params: lr={LEARN_RATE}, batch_size={BATCH_SIZE}, epochs={EPOCHS}')
 
 sample = gghzz.Process(  
-    (1.4783394, SAMPLE_DIR + '/ggZZ2e2m_all_new.csv', 1e6),
-    (0.47412769, SAMPLE_DIR + '/ggZZ4e_all_new.csv', 1e6),
-    (0.47412769, SAMPLE_DIR + '/ggZZ4m_all_new.csv', 1e6)
+    (1.4783394, SAMPLE_DIR + '/ggZZ2e2m_all_new.csv', 33e2),
+    (0.47412769, SAMPLE_DIR + '/ggZZ4e_all_new.csv', 33e2),
+    (0.47412769, SAMPLE_DIR + '/ggZZ4m_all_new.csv', 33e2)
 )
 
 print('Total events:', sample.events.shape[0])
 
-base_size = EVENTS_PER_CLASS # for train and validation data each
+#base_size = EVENTS_PER_CLASS # for train and validation data each
 
-fraction = 2*base_size/sample.events.shape[0] # fraction of the dataset that is actually needed
+#fraction = 2*base_size/sample.events.shape[0] # fraction of the dataset that is actually needed
 
-sample.events = sample.events.sample(frac=fraction, random_state=SEED)
+#sample.events = sample.events.sample(frac=fraction, random_state=SEED)
 
 z_chooser = zpair.ZPairChooser(bounds1=(50,115), bounds2=(50,115), algorithm='leastsquare')
 l1_1, l2_1, l1_2, l2_2 = sample.events.filter(z_chooser)
@@ -60,23 +61,23 @@ kin_variables = angles.calculate(l1_1, l2_1, l1_2, l2_2)
 
 true_size = kin_variables.shape[0]
 
-print(f'Initial base size set to {base_size}. Train and validation data will be {int(true_size/2)*2} each after Z mass cuts.')
+print(f'Initial base size set to {EVENTS_PER_CLASS}. Train and validation data will be {int(true_size/2)*2} each after Z mass cuts.')
 
-c6 = np.linspace(-20,20,201)
+c6_values = np.linspace(-20,20,2001)
 
-c6_mod = c6.Modifier(amplitude_component = msq.Component.SBI, c6_values = [-5,-1,0,1,5])
+c6_mod = c6.Modifier(amplitude_component = msq.Component.SIG, c6_values = [-5,-1,0,1,5])
 c6_weights, c6_prob = c6_mod.modify(sample=sample, c6=c6)
 
 train_data = datasets.build_dataset_tf(x_arr = kin_variables[:int(true_size/2)], 
-                                       param_values = c6, 
+                                       param_values = c6_values, 
                                        signal_weights = c6_weights[:int(true_size/2)], 
-                                       background_weights = np.array(sample.events.weights)[:int(true_size/2)],
+                                       background_weights = np.array(sample[msq.Component.SIG].weights)[:int(true_size/2)],
                                        normalization = 1)
 
 val_data = datasets.build_dataset_tf(  x_arr = kin_variables[int(true_size/2):], 
-                                       param_values = c6, 
+                                       param_values = c6_values, 
                                        signal_weights = c6_weights[int(true_size/2):], 
-                                       background_weights = np.array(sample.events.weights)[int(true_size/2):],
+                                       background_weights = np.array(sample[msq.Component.SIG].weights)[int(true_size/2):],
                                        normalization = 1)
 
 
@@ -93,7 +94,7 @@ val_data = tf.random.shuffle(val_data, seed=SEED)
 
 print('val_data:', val_data, val_data.shape)
 
-print(f'StandardScaler params: mu={train_scaler.mean_.tolist()}, variance={train_scaler.var_.tolist()}, scale={train_scaler.scale_.tolist()}')
+print(f'StandardScaler params: \nscaler.mean_ = {train_scaler.mean_.tolist()}\nscaler.var_ = {train_scaler.var_.tolist()}\nscaler.scale_ = {train_scaler.scale_.tolist()}')
 
 model = models.C6_4l_clf_maxi()
 
