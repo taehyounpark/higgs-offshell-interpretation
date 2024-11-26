@@ -8,3 +8,5 @@ __pycache__/
 *.keras
 *history*.txt
 *.tf/
+*.slurm
+*.config
