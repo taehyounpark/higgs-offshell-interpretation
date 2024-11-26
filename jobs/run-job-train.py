@@ -46,7 +46,7 @@ def submit_job(job):
         print(f"Failed to submit job {runstring}: {e}")
 
 def define_job(runstring, slurm_params, train_params, train_flags=[]):
-    command = 'python train-nn-sig.py '
+    command = 'python train-nn.py '
 
     train_params_all = ['learn-rate', 'batch-size', 'epochs', 'num-events', 'num-layers', 'num-nodes', 'sample_dir', 'c6']
     train_flags_all = ['sig','int']
@@ -69,7 +69,7 @@ def define_job(runstring, slurm_params, train_params, train_flags=[]):
     return (runstring, command, slurm_params)
 
 def main():
-    job = define_job('train-multi-SBI', slurm_params={'time': '24:00:00', 'n-cpus': 36, 'n-gpus': 2, 'mem': 60000}, train_params={'num-events': 1000, 'c6': [-20,20,2001], 'epochs': 120, 'batch_size': 32, 'learning_rate': 1e-5})
+    job = define_job('train-multi-SBI', slurm_params={'time': '16:00:00', 'n-cpus': 36, 'n-gpus': 2, 'mem': 60000}, train_params={'num-events': 1000, 'c6': [-20,20,2001], 'epochs': 120, 'batch_size': 32, 'learning_rate': 1e-5})
     print('Starting job', job)
 
     submit_job(job)
