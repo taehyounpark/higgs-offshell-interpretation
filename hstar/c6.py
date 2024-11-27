@@ -12,18 +12,23 @@ class Modifier():
   def modify(self, sample, c6):
 
     if np.isscalar(c6):
-      c6 = [c6]
+      c6 = np.array([c6])
 
     events = sample[self.amplitude_component]
 
-    msq_c6 = np.array([events.amplitudes[c6_amplitude].to_numpy() for c6_amplitude in self.c6_amplitudes]).T
+    if self.amplitude_component == msq.Component.BKG:
+      wt_sm = np.ones((len(events.weights), len(c6)))
+      wt_sm *= events.weights
+      return (wt_sm, wt_sm / np.sum(wt_sm))
+
     msq_sm = events.amplitudes[mcfm.amplitude_sm[self.amplitude_component]].to_numpy()
+    msq_c6 = np.array([events.amplitudes[c6_amplitude].to_numpy() for c6_amplitude in self.c6_amplitudes]).T
 
     # Solve the polynomial for each row
     coeffs = np.apply_along_axis(lambda x: np.linalg.solve(np.vander(self.c6_values, len(self.c6_values), increasing=True), x), 1, msq_c6 / msq_sm[:, np.newaxis])[:, ::-1]
 
     # Evaluate the polynomial at c6 for each row
-    wt_c6 = events.weights.to_numpy()[:,np.newaxis] * np.apply_along_axis(lambda x: np.polyval(x, np.array(c6)), 1, coeffs)
+    wt_c6 = events.weights.to_numpy()[:,np.newaxis] * np.apply_along_axis(lambda x: np.polyval(x, c6), 1, coeffs)
     prob_c6 = wt_c6 / np.sum(wt_c6, axis=0)
 
     return (wt_c6, prob_c6)
