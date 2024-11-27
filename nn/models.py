@@ -31,7 +31,7 @@ class C6_4l_clf(Model):
         for i in range(1,num_layers):
             self.custom_layers.append(Dense(num_nodes[i], activation=swish, kernel_initializer='he_normal'))
 
-        self.custom_layers.append(Dense(1, activation='sigmoid'))
+        self.custom_layers.append(Dense(1, activation='sigmoid', kernel_initializer='he_normal'))
 
     def call(self, inputs):
         x = self.custom_layers[0](inputs)

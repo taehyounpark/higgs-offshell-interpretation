@@ -1,6 +1,7 @@
 import os
 import subprocess
 
+
 def write_job(job):
     runstring, command, params = job
     os.makedirs(runstring, exist_ok=True)
@@ -57,7 +58,7 @@ def define_job(runstring, slurm_params, train_params, train_flags=[]):
 
     for key, value in train_params.items():
         if value is not None and key in train_params_all:
-            command += '--' + key + ' ' + str(value).replace('[','').replace(']','').replace('(','').replace(')','') + ' '
+            command += '--' + key + '=' + str(value).replace('[','').replace(']','').replace('(','').replace(')','').replace(' ', '') + ' '
 
     command += '-o ' + runstring
     
@@ -69,10 +70,20 @@ def define_job(runstring, slurm_params, train_params, train_flags=[]):
     return (runstring, command, slurm_params)
 
 def main():
-    job = define_job('train-multi-SBI', slurm_params={'time': '16:00:00', 'n-cpus': 36, 'n-gpus': 2, 'mem': 60000}, train_params={'num-events': 1000, 'c6': [-20,20,2001], 'epochs': 120, 'batch_size': 32, 'learning_rate': 1e-5})
-    print('Starting job', job)
+    joblist = [
+        define_job('train-multi-SIG', 
+                   slurm_params={'time': '16:00:00', 'n-cpus': 36, 'n-gpus': 2, 'mem': 60000}, 
+                   train_flags=['sig'], 
+                   train_params={'num-events': 1000, 'c6': [-20,20,2001], 'epochs': 120, 'batch_size': 32, 'learning_rate': 1e-5}),
+        define_job('train-multi-SBI', 
+                   slurm_params={'time': '16:00:00', 'n-cpus': 36, 'n-gpus': 2, 'mem': 60000},
+                   train_params={'num-events': 1000, 'c6': [-20,20,2001], 'epochs': 120, 'batch_size': 32, 'learning_rate': 1e-5})
+    ]
 
-    submit_job(job)
+
+    for job in joblist:
+        submit_job(job)
+        print('Starting job', job)
 
 if __name__ == '__main__':
     main()
