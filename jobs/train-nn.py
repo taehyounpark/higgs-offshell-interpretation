@@ -36,6 +36,9 @@ def parse_arguments():
     parser.add_argument('--c6', help='Single value for c6 or three comma separated values like a,b,c specifying a np.linspace(a,b,c). (default: -10,10,21)')
     parser.add_argument('--sig', action='store_true', help='Use for enabling training on SIG data only.')
     parser.add_argument('--int', action='store_true', help='Use for enabling training on INT data only.')
+    parser.add_argument('--sig-vs-sbi', action='store_true', help='Use for enabling training on SIG(c6) vs SBI(SM).')
+    parser.add_argument('--int-vs-sbi', action='store_true', help='Use for enabling training on INT(c6) vs SBI(SM).')
+    parser.add_argument('--bkg-vs-sbi', action='store_true', help='Use for enabling training on BKG(c6) vs SBI(SM).')
 
     args = parser.parse_args()
 
@@ -46,13 +49,17 @@ def parse_arguments():
     num_events = None if args.num_events is None else int(args.num_events)
     num_layers = 10 if args.num_layers is None else int(args.num_layers)
     epochs = 100 if args.epochs is None else int(args.epochs)
-    train_sig = False if args.sig is None else args.sig
-    train_int = False if args.int is None else args.int
 
-    if train_sig and train_int:
-        raise ValueError('--int and --sig cannot be enabled simultaneously')
+    num_flags_components = np.sum(np.array([args.sig, args.int, args.sig_vs_sbi, args.int_vs_sbi, args.bkg_vs_sbi]).astype(int))
 
-    c6_input = np.array(-10,10,21) if args.c6 is None else np.fromstring(args.c6, sep=',')
+    if num_flags_components > 1:
+        raise ValueError('You can only activate one of [sig, int, sig-vs-sbi, int-vs-sbi, bkg-vs-sbi] at once')
+
+    flag_component = np.array(['sig', 'int', 'sig-vs-sbi', 'int-vs-sbi', 'bkg-vs-sbi'])[np.where(np.array([args.sig, args.int, args.sig_vs_sbi, args.int_vs_sbi, args.bkg_vs_sbi])==True)]
+
+    flag_component = flag_component[0] if len(flag_component.shape) > 0 else ''
+
+    c6_input = np.array([-10,10,21]) if args.c6 is None else np.fromstring(args.c6, sep=',')
 
     if len(c6_input) == 1:
         c6_values = c6_input
@@ -71,7 +78,7 @@ def parse_arguments():
         raise ValueError('num_nodes should be a single value or a comma separated list of integer values fulfilling len(num_nodes)=num_layers')
     
 
-    return {'sample_dir': sample_dir, 'output_dir': output_dir, 'sig': train_sig, 'int': train_int, 'learning_rate': learn_rate, 'batch_size': batch_size, 'num_events': num_events, 'num_layers': num_layers, 'num_nodes': num_nodes, 'epochs': epochs, 'c6_values': c6_values.tolist()}
+    return {'sample_dir': sample_dir, 'output_dir': output_dir, 'flags': [flag_component], 'learning_rate': learn_rate, 'batch_size': batch_size, 'num_events': num_events, 'num_layers': num_layers, 'num_nodes': num_nodes, 'epochs': epochs, 'c6_values': c6_values.tolist()}
 
 
 def load_kinematics(sample, bounds1=(50,115), bounds2=(50,115), algorithm='leastsquare'):
@@ -87,6 +94,17 @@ def save_config(output_dir, *config):
     with open(file_path, 'w') as config_file:
         config_file.write(json.dumps(config, indent=4))
 
+def get_components(config):
+    component_flag = np.array(config['flags'])[np.where(np.array(config['flags']) in ['sig', 'int', 'sig-vs-sbi', 'int-vs-sbi', 'bkg-vs-sbi'])][0]
+    component_1, component_2 = component_flag.split('-')[0], component_flag.split('-')[-1]
+    
+    comp_dict = {'sig': msq.Component.SIG,
+                 'int': msq.Component.INT,
+                 'bkg': msq.Component.BKG,
+                 'sbi': msq.Component.SBI}
+
+    return (comp_dict[component_1], comp_dict[component_2])
+    
 
 def main():
     config = parse_arguments()
@@ -112,22 +130,22 @@ def main():
 
     print(f'Initial base size set to {int(set_size/2)}. Train and validation data will be {int(true_size/2)*2} each after Z mass cuts.')
 
-    component = msq.Component.SIG if config['sig'] else msq.Component.SBI
-    component = msq.Component.INT if config['int'] else component
 
-    c6_mod = c6.Modifier(amplitude_component = component, c6_values = [-5,-1,0,1,5])
+    component_c6, component_sm = get_components(config)
+
+    c6_mod = c6.Modifier(amplitude_component = component_c6, c6_values = [-5,-1,0,1,5])
     c6_weights, c6_prob = c6_mod.modify(sample=sample, c6=config['c6_values'])
 
     train_data = datasets.build_dataset_tf(x_arr = kin_variables[:int(true_size/2)], 
                                            param_values = config['c6_values'], 
                                            signal_weights = c6_weights[:int(true_size/2)], 
-                                           background_weights = np.array(sample[component].weights)[:int(true_size/2)], 
+                                           background_weights = np.array(sample[component_sm].weights)[:int(true_size/2)], 
                                            normalization = 1)
 
     val_data = datasets.build_dataset_tf(x_arr = kin_variables[int(true_size/2):], 
                                          param_values = config['c6_values'], 
                                          signal_weights = c6_weights[int(true_size/2):], 
-                                         background_weights = np.array(sample[component].weights)[int(true_size/2):], 
+                                         background_weights = np.array(sample[component_sm].weights)[int(true_size/2):], 
                                          normalization = 1)
     
     # The following will scale only kinematics for nonprm and kinematics + c6 for prm
@@ -177,7 +195,10 @@ def main():
 
 
     # Run model.fit
-    history_callback = model.fit(dist_train_dataset, validation_data=dist_val_dataset, callbacks=[model_checkpoint_callback, early_stopping_callback, tensorboard_callback], epochs=config['epochs'], verbose=2)
+    train_steps = int(train_data.shape[0]/config['batch_size'])
+    val_steps = int(val_data.shape[0]/config['batch_size'])
+
+    history_callback = model.fit(dist_train_dataset, steps_per_epoch=train_steps, validation_data=dist_val_dataset, validation_steps=val_steps, callbacks=[model_checkpoint_callback, early_stopping_callback, tensorboard_callback], epochs=config['epochs'], verbose=2)
 
     model.save(os.path.join(config['output_dir'], 'final.model.tf'), save_format='tf')
 
