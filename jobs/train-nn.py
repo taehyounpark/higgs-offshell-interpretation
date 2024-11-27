@@ -49,8 +49,8 @@ def parse_arguments():
     num_events = None if args.num_events is None else int(args.num_events)
     num_layers = 10 if args.num_layers is None else int(args.num_layers)
     epochs = 100 if args.epochs is None else int(args.epochs)
-    train_sig = False if args.sig is None else True
-    train_int = False if args.int is None else True
+    train_sig = False if args.sig is None else args.sig
+    train_int = False if args.int is None else args.int
 
     if train_sig and train_int:
         raise ValueError('--int and --sig cannot be enabled simultaneously')
@@ -162,11 +162,25 @@ def main():
 
     os.makedirs(config['output_dir'], exist_ok=True)
 
+    # Setup keras callbacks
     checkpoint_filepath = os.path.join(config['output_dir'], 'checkpoint.model.tf')
     model_checkpoint_callback = keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath, monitor='val_loss', mode='min', save_best_only=True, save_format='tf')
     early_stopping_callback = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', patience=30, start_from_epoch=30)
+    tensorboard_callback = keras.callbacks.TensorBoard(log_dir=os.path.join(config['output_dir'], 'logs'))
 
-    history_callback = model.fit(x=train_data[:,:-2], y=train_data[:,-2][:,np.newaxis], sample_weight=train_data[:,-1][:,np.newaxis], validation_data=(val_data[:,:-2], val_data[:,-2], val_data[:,-1]), batch_size=config['batch_size'], callbacks=[model_checkpoint_callback, early_stopping_callback], epochs=config['epochs'], verbose=2)
+    # Get tf Datasets and distribute them
+    train_dataset = tf.data.Dataset.from_tensor_slices((train_data[:,:-2], train_data[:,-2][:,tf.newaxis], train_data[:,-1][:,tf.newaxis]))
+    val_dataset = tf.data.Dataset.from_tensor_slices((val_data[:,:-2], val_data[:,-2][:,tf.newaxis], val_data[:,-1][:,tf.newaxis]))
+
+    train_dataset = train_dataset.batch(config['batch_size']*mirrored_strategy.num_replicas_in_sync)
+    val_dataset = val_dataset.batch(config['batch_size']*mirrored_strategy.num_replicas_in_sync)
+
+    dist_train_dataset = mirrored_strategy.experimental_distribute_dataset(train_dataset)
+    dist_val_dataset = mirrored_strategy.experimental_distribute_dataset(val_dataset)
+
+
+    # Run model.fit
+    history_callback = model.fit(dist_train_dataset, validation_data=dist_val_dataset, callbacks=[model_checkpoint_callback, early_stopping_callback, tensorboard_callback], epochs=config['epochs'], verbose=2)
 
     model.save(os.path.join(config['output_dir'], 'final.model.tf'), save_format='tf')
 
