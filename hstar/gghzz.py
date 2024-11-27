@@ -1,14 +1,6 @@
-from enum import Enum
 import pandas as pd
-from . import mcfm, msq
 
-import numpy as np
-
-class Channel(Enum):
-  ELEL = 1
-  MUMU = 2
-  ELMU = 3
-  INCL = 4
+from ..simulation import mcfm
 
 class Events():
   def __init__(self):
