@@ -47,6 +47,16 @@ class Events():
 
     return events
 
+  def __getitem__(self, item):
+    events = Events()
+    
+    events.kinematics = self.kinematics[item]
+    events.amplitudes = self.amplitudes[item]
+    events.weights = self.weights[item]
+    events.probabilities = self.probabilities[item]
+
+    return events
+
 class Process():
 
   def __init__(self, *channels):
