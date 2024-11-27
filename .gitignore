@@ -10,3 +10,4 @@ __pycache__/
 *.tf/
 *.slurm
 *.config
+execute.py

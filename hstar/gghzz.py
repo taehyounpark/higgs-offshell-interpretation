@@ -33,7 +33,7 @@ class Events():
     events.kinematics = self.kinematics.sample(frac=1.0, random_state=random_state, ignore_index=True)
     events.amplitudes = self.amplitudes.sample(frac=1.0, random_state=random_state, ignore_index=True)
     events.weights = self.weights.sample(frac=1.0, random_state=random_state, ignore_index=True)
-    events.probabilities = self.probabilities.sample(frac=1.0, random_state=random_state, ignore_index=True)
+    events.probabilities = events.weights/events.weights.sum()
 
     return events
   
@@ -43,7 +43,7 @@ class Events():
     events.kinematics = self.kinematics.sample(frac=frac, random_state=random_state, ignore_index=True)
     events.amplitudes = self.amplitudes.sample(frac=frac, random_state=random_state, ignore_index=True)
     events.weights = self.weights.sample(frac=frac, random_state=random_state, ignore_index=True)
-    events.probabilities = self.probabilities.sample(frac=frac, random_state=random_state, ignore_index=True)
+    events.probabilities = events.weights/events.weights.sum()
 
     return events
 
@@ -53,7 +53,7 @@ class Events():
     events.kinematics = self.kinematics[item]
     events.amplitudes = self.amplitudes[item]
     events.weights = self.weights[item]
-    events.probabilities = self.probabilities[item]
+    events.probabilities = events.weights/events.weights.sum()
 
     return events
 

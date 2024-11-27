@@ -42,6 +42,7 @@ def parse_arguments():
     parser.add_argument('--sig-vs-sbi', action='store_true', help='Use for enabling training on SIG(c6) vs SBI(SM).')
     parser.add_argument('--int-vs-sbi', action='store_true', help='Use for enabling training on INT(c6) vs SBI(SM).')
     parser.add_argument('--bkg-vs-sbi', action='store_true', help='Use for enabling training on BKG(c6) vs SBI(SM).')
+    parser.add_argument('--distributed', action='store_true', help='Enable distributed learning (experimental).')
 
     args = parser.parse_args()
 
@@ -59,8 +60,15 @@ def parse_arguments():
         raise ValueError('You can only activate one of [sig, int, sig-vs-sbi, int-vs-sbi, bkg-vs-sbi] at once')
 
     flag_component = np.array(['sig', 'int', 'sig-vs-sbi', 'int-vs-sbi', 'bkg-vs-sbi'])[np.where(np.array([args.sig, args.int, args.sig_vs_sbi, args.int_vs_sbi, args.bkg_vs_sbi])==True)]
+    flag_component = flag_component[0] if flag_component.shape[0] == 0 else ''
 
-    flag_component = flag_component[0] if len(flag_component.shape) > 0 else ''
+    flags_values = {'distributed': args.distributed}
+    flags_active = [flag_component]
+
+    for key,value in flags_values.items():
+        if value is True:
+            flags_active.append(key)
+
 
     c6_input = np.array([-10,10,21]) if args.c6 is None else np.fromstring(args.c6, sep=',')
 
@@ -81,7 +89,7 @@ def parse_arguments():
         raise ValueError('num_nodes should be a single value or a comma separated list of integer values fulfilling len(num_nodes)=num_layers')
     
 
-    return {'sample_dir': sample_dir, 'output_dir': output_dir, 'flags': [flag_component], 'learning_rate': learn_rate, 'batch_size': batch_size, 'num_events': num_events, 'num_layers': num_layers, 'num_nodes': num_nodes, 'epochs': epochs, 'c6_values': c6_values.tolist()}
+    return {'sample_dir': sample_dir, 'output_dir': output_dir, 'flags': flags_active, 'learning_rate': learn_rate, 'batch_size': batch_size, 'num_events': num_events, 'num_layers': num_layers, 'num_nodes': num_nodes, 'epochs': epochs, 'c6_values': c6_values.tolist()}
 
 
 def load_kinematics(sample, bounds1=(50,115), bounds2=(50,115), algorithm='leastsquare'):
@@ -98,7 +106,8 @@ def save_config(output_dir, *config):
         config_file.write(json.dumps(config, indent=4))
 
 def get_components(config):
-    component_flag = np.array(config['flags'])[np.where(np.array(config['flags']) in ['sig', 'int', 'sig-vs-sbi', 'int-vs-sbi', 'bkg-vs-sbi'])][0]
+    component_flag = np.array(config['flags'])[np.where(np.array(config['flags']) in ['sig', 'int', 'sig-vs-sbi', 'int-vs-sbi', 'bkg-vs-sbi'])]
+    component_flag = component_flag[0] if component_flag.shape[0] != 0 else 'sbi'
     component_1, component_2 = component_flag.split('-')[0], component_flag.split('-')[-1]
     
     comp_dict = {'sig': msq.Component.SIG,
@@ -108,6 +117,65 @@ def get_components(config):
 
     return (comp_dict[component_1], comp_dict[component_2])
     
+
+def build_model(config, strategy=None):
+    if 'distributed' in config['flags'] and strategy is not None:
+        with strategy.scope():
+            if len(config['c6_values']) == 1:
+                model = models.C6_4l_clf(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=8)
+            else:
+                model = models.C6_4l_clf(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=9)
+
+            optimizer = Nadam(
+                learning_rate=config['learning_rate'],
+                beta_1=0.9,
+                beta_2=0.999,
+                epsilon=1e-07
+            )
+
+            model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['binary_accuracy'], weighted_metrics=['binary_accuracy'])
+    else:
+        if len(config['c6_values']) == 1:
+            model = models.C6_4l_clf(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=8)
+        else:
+            model = models.C6_4l_clf(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=9)
+
+        optimizer = Nadam(
+            learning_rate=config['learning_rate'],
+            beta_1=0.9,
+            beta_2=0.999,
+            epsilon=1e-07
+        )
+
+        model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['binary_accuracy'], weighted_metrics=['binary_accuracy'])
+    
+    return model
+
+def train_model(model, config, training_data, validation_data, callbacks=None, strategy=None):
+    train_dataset = tf.data.Dataset.from_tensor_slices((training_data[:,:-2], training_data[:,-2][:,tf.newaxis], training_data[:,-1][:,tf.newaxis]))
+    val_dataset = tf.data.Dataset.from_tensor_slices((validation_data[:,:-2], validation_data[:,-2][:,tf.newaxis], validation_data[:,-1][:,tf.newaxis]))
+
+    if 'distributed' in config['flags'] and strategy is not None:
+        train_dataset = train_dataset.batch(config['batch_size']*strategy.num_replicas_in_sync)
+        val_dataset = val_dataset.batch(config['batch_size']*strategy.num_replicas_in_sync)
+
+        dist_train_dataset = strategy.experimental_distribute_dataset(train_dataset)
+        dist_val_dataset = strategy.experimental_distribute_dataset(val_dataset)
+
+        # Run model.fit
+        train_steps = int(training_data.shape[0]/config['batch_size']/strategy.num_replicas_in_sync)
+        val_steps = int(validation_data.shape[0]/config['batch_size']/strategy.num_replicas_in_sync)
+
+        history_callback = model.fit(dist_train_dataset, steps_per_epoch=train_steps, validation_data=dist_val_dataset, validation_steps=val_steps, callbacks=callbacks, epochs=config['epochs'], verbose=2)
+    else:
+        train_dataset = train_dataset.batch(config['batch_size'])
+        val_dataset = val_dataset.batch(config['batch_size'])
+
+        # Run model.fit
+        history_callback = model.fit(train_dataset, validation_data=val_dataset, callbacks=callbacks, epochs=config['epochs'], verbose=2)
+        
+    return history_callback
+
 
 def main():
     config = parse_arguments()
@@ -136,20 +204,36 @@ def main():
 
     component_c6, component_sm = get_components(config)
 
-    c6_mod = c6.Modifier(amplitude_component = component_c6, c6_values = [-5,-1,0,1,5])
-    c6_weights, c6_prob = c6_mod.modify(sample=sample, c6=config['c6_values'])
+    if component_c6 != msq.Component.BKG:
+        c6_mod = c6.Modifier(amplitude_component = component_c6, c6_values = [-5,-1,0,1,5])
+        c6_weights, c6_prob = c6_mod.modify(sample=sample, c6=config['c6_values'])
 
-    train_data = datasets.build_dataset_tf(x_arr = kin_variables[:int(true_size/2)], 
+        train_data = datasets.build_dataset_tf(x_arr = kin_variables[:int(true_size/2)], 
                                            param_values = config['c6_values'], 
                                            signal_weights = c6_weights[:int(true_size/2)], 
                                            background_weights = np.array(sample[component_sm].weights)[:int(true_size/2)], 
                                            normalization = 1)
 
-    val_data = datasets.build_dataset_tf(x_arr = kin_variables[int(true_size/2):], 
-                                         param_values = config['c6_values'], 
-                                         signal_weights = c6_weights[int(true_size/2):], 
-                                         background_weights = np.array(sample[component_sm].weights)[int(true_size/2):], 
-                                         normalization = 1)
+        val_data = datasets.build_dataset_tf(x_arr = kin_variables[int(true_size/2):], 
+                                            param_values = config['c6_values'], 
+                                            signal_weights = c6_weights[int(true_size/2):], 
+                                            background_weights = np.array(sample[component_sm].weights)[int(true_size/2):], 
+                                            normalization = 1)
+    else:
+        bkg_weights, bkg_prob = sample[component_c6].weights, sample[component_c6].probabilities
+
+        train_data = datasets.build_dataset_tf(x_arr = kin_variables[:int(true_size/2)], 
+                                               param_values = [0.0], 
+                                               signal_weights = bkg_weights[:int(true_size/2)], 
+                                               background_weights = np.array(sample[component_sm].weights)[:int(true_size/2)], 
+                                               normalization = 1)
+
+        val_data = datasets.build_dataset_tf(x_arr = kin_variables[int(true_size/2):], 
+                                             param_values = [0.0], 
+                                             signal_weights = bkg_weights[int(true_size/2):], 
+                                             background_weights = np.array(sample[component_sm].weights)[int(true_size/2):], 
+                                             normalization = 1)
+
     
     # The following will scale only kinematics for nonprm and kinematics + c6 for prm
     train_scaler = StandardScaler()
@@ -162,21 +246,8 @@ def main():
     save_config(config['output_dir'], config, {'scaler.mean_': train_scaler.mean_.tolist(), 'scaler.var_': train_scaler.var_.tolist(), 'scaler.scale_': train_scaler.scale_.tolist()})
     print(f'Settings for this run are stored in {os.path.join(config["output_dir"], "job.config")}')
 
-    with mirrored_strategy.scope():
-        
-        if len(config['c6_values']) == 1:
-            model = models.C6_4l_clf(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=kin_variables.shape[1])
-        else:
-            model = models.C6_4l_clf(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=kin_variables.shape[1]+1)
-
-        optimizer = Nadam(
-            learning_rate=config['learning_rate'],
-            beta_1=0.9,
-            beta_2=0.999,
-            epsilon=1e-07
-        )
-
-        model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['binary_accuracy'], weighted_metrics=['binary_accuracy'])
+    # Build model (distributed if flag given)
+    model = build_model(config, mirrored_strategy)
 
     os.makedirs(config['output_dir'], exist_ok=True)
 
@@ -186,22 +257,8 @@ def main():
     early_stopping_callback = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', patience=30, start_from_epoch=30)
     tensorboard_callback = keras.callbacks.TensorBoard(log_dir=os.path.join(config['output_dir'], 'logs'))
 
-    # Get tf Datasets and distribute them
-    train_dataset = tf.data.Dataset.from_tensor_slices((train_data[:,:-2], train_data[:,-2][:,tf.newaxis], train_data[:,-1][:,tf.newaxis]))
-    val_dataset = tf.data.Dataset.from_tensor_slices((val_data[:,:-2], val_data[:,-2][:,tf.newaxis], val_data[:,-1][:,tf.newaxis]))
-
-    train_dataset = train_dataset.batch(config['batch_size']*mirrored_strategy.num_replicas_in_sync)
-    val_dataset = val_dataset.batch(config['batch_size']*mirrored_strategy.num_replicas_in_sync)
-
-    dist_train_dataset = mirrored_strategy.experimental_distribute_dataset(train_dataset)
-    dist_val_dataset = mirrored_strategy.experimental_distribute_dataset(val_dataset)
-
-
-    # Run model.fit
-    train_steps = int(train_data.shape[0]/config['batch_size'])
-    val_steps = int(val_data.shape[0]/config['batch_size'])
-
-    history_callback = model.fit(dist_train_dataset, steps_per_epoch=train_steps, validation_data=dist_val_dataset, validation_steps=val_steps, callbacks=[model_checkpoint_callback, early_stopping_callback, tensorboard_callback], epochs=config['epochs'], verbose=2)
+    # Train model
+    history_callback = train_model(model, config, train_data, val_data, callbacks=[model_checkpoint_callback, tensorboard_callback], strategy=mirrored_strategy)
 
     model.save(os.path.join(config['output_dir'], 'final.model.tf'), save_format='tf')
 

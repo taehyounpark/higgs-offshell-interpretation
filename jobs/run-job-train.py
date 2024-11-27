@@ -1,5 +1,6 @@
 import os
 import subprocess
+import shutil
 
 
 def write_job(job):
@@ -40,6 +41,8 @@ source ../../venv/bin/activate
 def submit_job(job):
     runstring, _, _ = job
     script_path = write_job(job)
+
+    shutil.copyfile('train-nn.py', f'{runstring}/execute.py')
     
     try:
         subprocess.run(f"sbatch {script_path}", shell=True, check=True)
@@ -47,10 +50,10 @@ def submit_job(job):
         print(f"Failed to submit job {runstring}: {e}")
 
 def define_job(runstring, slurm_params, train_params, train_flags=[]):
-    command = 'python train-nn.py '
+    command = f'python {runstring}/execute.py '
 
-    train_params_all = ['learn-rate', 'batch-size', 'epochs', 'num-events', 'num-layers', 'num-nodes', 'sample_dir', 'c6']
-    train_flags_all = ['sig','int']
+    train_params_all = ['learn-rate', 'batch-size', 'epochs', 'num-events', 'num-layers', 'num-nodes', 'sample-dir', 'c6']
+    train_flags_all = ['sig','int','sig-vs-sbi','int-vs-sbi','bkg-vs-sbi']
 
     for flag in train_flags:
         if flag in train_flags_all:
@@ -74,16 +77,35 @@ def main():
         define_job('train-multi-SIG', 
                    slurm_params={'time': '16:00:00', 'n-cpus': 36, 'n-gpus': 2, 'mem': 60000}, 
                    train_flags=['sig'], 
-                   train_params={'num-events': 1000, 'c6': [-20,20,2001], 'epochs': 120, 'batch_size': 32, 'learning_rate': 1e-5}),
+                   train_params={'num-events': 1000, 'c6': [-20,20,2001], 'epochs': 120, 'batch-size': 32, 'learning-rate': 1e-5}),
         define_job('train-multi-SBI', 
                    slurm_params={'time': '16:00:00', 'n-cpus': 36, 'n-gpus': 2, 'mem': 60000},
-                   train_params={'num-events': 1000, 'c6': [-20,20,2001], 'epochs': 120, 'batch_size': 32, 'learning_rate': 1e-5})
+                   train_params={'num-events': 1000, 'c6': [-20,20,2001], 'epochs': 120, 'batch-size': 32, 'learning-rate': 1e-5})
     ]
 
+    joblist = [
+        define_job('train-SIG-vs-SBI',
+                   slurm_params={'time': '24:00:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
+                   train_flags=['sig-vs-sbi'],
+                   train_params={'num-events': 100000, 'c6': [-20,20,11], 'epochs': 120, 'batch-size': 32, 'learning-rate': 1e-5}),
+        define_job('train-INT-vs-SBI',
+                   slurm_params={'time': '24:00:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
+                   train_flags=['int-vs-sbi'],
+                   train_params={'num-events': 100000, 'c6': [-20,20,11], 'epochs': 120, 'batch-size': 32, 'learning-rate': 1e-5}),
+        define_job('train-BKG-vs-SBI',
+                    slurm_params={'time': '16:00:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
+                    train_params={'num-events': 100000, 'epochs':80, 'batch-size': 32, 'learning-rate':1e-5})
+    ]
 
     for job in joblist:
         submit_job(job)
         print('Starting job', job)
+
+    #job = define_job('train-INT-vs-SBI',
+    #               slurm_params={'time': '12:00:00', 'n-cpus': 36, 'n-gpus': 4, 'mem': 100000},
+    #               train_flags=['int-vs-sbi'],
+    #               train_params={'num-events': 100000, 'c6': [-20,20,101], 'epochs': 120, 'batch_size': 32, 'learning_rate': 1e-5})
+    #submit_job(job)
 
 if __name__ == '__main__':
     main()
