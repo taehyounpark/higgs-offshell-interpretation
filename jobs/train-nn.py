@@ -1,3 +1,5 @@
+import numpy as np
+import os, json
 import sys
 sys.path.append('../')
 
@@ -8,15 +10,10 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.optimizers import Nadam 
 
-from hstar import gghzz, c6, msq
-
+from hstar import gghzz, c6
 from hzz import zpair, angles
-
+from simulation import msq
 from nn import datasets, models
-
-import numpy as np
-
-import os, json
 
 from sklearn.preprocessing import StandardScaler
 

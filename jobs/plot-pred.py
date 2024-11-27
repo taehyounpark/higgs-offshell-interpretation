@@ -1,12 +1,13 @@
 import sys
 sys.path.append('../')
 
+from simulation import msq
 import tensorflow as tf
 from tensorflow import keras
 
 from nn.models import C6_4l_clf_maxi, swish_activation
 from nn import datasets
-from hstar import gghzz, c6, msq
+from hstar import gghzz, c6
 from hzz import zpair, angles
 
 import numpy as np

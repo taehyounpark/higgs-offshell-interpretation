@@ -1,6 +1,7 @@
+from ..simulation import msq
 import numpy as np
 
-from . import mcfm, msq
+from ..simulation import mcfm
 
 class Modifier():
 
