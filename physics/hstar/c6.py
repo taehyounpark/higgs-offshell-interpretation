@@ -1,6 +1,8 @@
-from ..simulation import msq
 import numpy as np
 
+import sys
+sys.path.append("..") # Adds higher directory to python modules path.
+from ..simulation import msq
 from ..simulation import mcfm
 
 class Modifier():

@@ -1,5 +1,7 @@
 __pycache__/
 
+inference/
+
 *.dat
 *.csv
 *.pdf
