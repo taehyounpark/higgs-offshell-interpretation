@@ -11,8 +11,10 @@ from tensorflow import keras
 from tensorflow.keras.optimizers import Nadam 
 
 from hstar import gghzz, c6
-from hzz import zpair, angles
 from simulation import msq
+
+from hzz import zpair, angles
+
 from nn import datasets, models
 
 from sklearn.preprocessing import StandardScaler
@@ -57,7 +59,7 @@ def parse_arguments():
         raise ValueError('You can only activate one of [sig, int, sig-vs-sbi, int-vs-sbi, bkg-vs-sbi] at once')
 
     flag_component = np.array(['sig', 'int', 'sig-vs-sbi', 'int-vs-sbi', 'bkg-vs-sbi'])[np.where(np.array([args.sig, args.int, args.sig_vs_sbi, args.int_vs_sbi, args.bkg_vs_sbi])==True)]
-    flag_component = flag_component[0] if flag_component.shape[0] == 0 else ''
+    flag_component = flag_component[0] if flag_component.shape[0] != 0 else ''
 
     flags_values = {'distributed': args.distributed}
     flags_active = [flag_component]
@@ -217,7 +219,7 @@ def main():
                                             background_weights = np.array(sample[component_sm].weights)[int(true_size/2):], 
                                             normalization = 1)
     else:
-        bkg_weights, bkg_prob = sample[component_c6].weights, sample[component_c6].probabilities
+        bkg_weights, bkg_prob = np.array(sample[component_c6].weights)[:,np.newaxis], np.array(sample[component_c6].probabilities)[:,np.newaxis]
 
         train_data = datasets.build_dataset_tf(x_arr = kin_variables[:int(true_size/2)], 
                                                param_values = [0.0], 
