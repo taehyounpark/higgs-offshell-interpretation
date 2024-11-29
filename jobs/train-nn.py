@@ -10,10 +10,10 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.optimizers import Nadam 
 
-from hstar import gghzz, c6
-from simulation import msq
+from physics.hstar import gghzz, c6
+from physics.simulation import msq
 
-from hzz import zpair, angles
+from physics.hzz import zpair, angles
 
 from nn import datasets, models
 
@@ -68,8 +68,10 @@ def parse_arguments():
         if value is True:
             flags_active.append(key)
 
-
-    c6_input = np.array([-10,10,21]) if args.c6 is None else np.fromstring(args.c6, sep=',')
+    if 'bkg-vs-sbi' in flags_active:
+        c6_input = np.array([0.0])
+    else:
+        c6_input = np.array([-10,10,21]) if args.c6 is None else np.fromstring(args.c6, sep=',')
 
     if len(c6_input) == 1:
         c6_values = c6_input
@@ -193,6 +195,8 @@ def main():
     )
 
     set_size = sample.events.kinematics.shape[0]
+
+    sample.events.filter(msq.ZeroMSQFilter('msq_int_sm'))
 
     kin_variables = load_kinematics(sample)
 
