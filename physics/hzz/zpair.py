@@ -1,12 +1,9 @@
-import sys
-sys.path.append('../')
-
 import vector
 import numpy as np
 
 import pandas as pd
 
-from hstar import gghzz
+from ..hstar import gghzz
 
 class ZPairChooser:
     def __init__(self, bounds1: tuple[int, int], bounds2: tuple[int, int], algorithm: str = 'leastsquare'):
