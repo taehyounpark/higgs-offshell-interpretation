@@ -7,10 +7,11 @@ class Component(Enum):
   INT = 2
   BKG = 3
 
-class ZeroMSQFilter():
-  def __init__(self, amplitude):
-    self.amplitude = amplitude
+class MSQFilter():
+  def __init__(self, component, value):
+    self.component = component
+    self.value = value
 
-  def filter(self, events):
-    indices = np.where(np.array(events.amplitudes[self.amplitude])!=0.0)[0]
+  def filter(self, kinematics, components, weights, probabilities):
+    indices = np.where(np.array(components[self.component])!=self.value)[0]
     return indices, None

@@ -10,7 +10,7 @@ class Events():
     self.probabilities = None
 
   def filter(self, obj_instance):
-    indices, output = obj_instance.filter(self)
+    indices, output = obj_instance.filter(self.kinematics, self.components, self.weights, self.probabilities)
 
     self.kinematics = self.kinematics.take(indices)
     self.components = self.components.take(indices)

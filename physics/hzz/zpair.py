@@ -6,12 +6,12 @@ import pandas as pd
 from ..hstar import gghzz
 
 class ZPairChooser:
-    def __init__(self, bounds1: tuple[int, int], bounds2: tuple[int, int], algorithm: str = 'leastsquare'):
+    def __init__(self, bounds1: tuple[int, int] = None, bounds2: tuple[int, int] = None, algorithm: str = 'leastsquare'):
         self.bounds1 = bounds1
         self.bounds2 = bounds2
 
-        if algorithm not in ['leastsquare', 'closest']:
-            raise ValueError('algorithm has to be one of ["leastsquare", "closest"]')
+        if algorithm not in ['leastsquare', 'closest', 'truth']:
+            raise ValueError('algorithm has to be one of ["leastsquare", "closest", "truth"]')
 
         self.algorithm = algorithm
 
@@ -77,23 +77,32 @@ class ZPairChooser:
 
         return (l1_1, l2_1, l1_2, l2_2)
 
-    def filter(self, events: gghzz.Events) -> tuple[np.ndarray, tuple[vector.MomentumNumpy4D, vector.MomentumNumpy4D, vector.MomentumNumpy4D, vector.MomentumNumpy4D]]:
+    def filter(self, kinematics, components, weights, probabilities) -> tuple[np.ndarray, tuple[vector.MomentumNumpy4D, vector.MomentumNumpy4D, vector.MomentumNumpy4D, vector.MomentumNumpy4D]]:
         #Outgoing leptons
-        l1 = vector.array({'px': events.kinematics['p3_px'], 'py': events.kinematics['p3_py'], 'pz': events.kinematics['p3_pz'], 'E': events.kinematics['p3_E']})#negative l1
-        l2 = vector.array({'px': events.kinematics['p4_px'], 'py': events.kinematics['p4_py'], 'pz': events.kinematics['p4_pz'], 'E': events.kinematics['p4_E']})#positive l1
-        l3 = vector.array({'px': events.kinematics['p5_px'], 'py': events.kinematics['p5_py'], 'pz': events.kinematics['p5_pz'], 'E': events.kinematics['p5_E']})#negative l2
-        l4 = vector.array({'px': events.kinematics['p6_px'], 'py': events.kinematics['p6_py'], 'pz': events.kinematics['p6_pz'], 'E': events.kinematics['p6_E']})#positive l2
+        l1 = vector.array({'px': kinematics['p3_px'], 'py': kinematics['p3_py'], 'pz': kinematics['p3_pz'], 'E': kinematics['p3_E']})#negative l1
+        l2 = vector.array({'px': kinematics['p4_px'], 'py': kinematics['p4_py'], 'pz': kinematics['p4_pz'], 'E': kinematics['p4_E']})#positive l1
+        l3 = vector.array({'px': kinematics['p5_px'], 'py': kinematics['p5_py'], 'pz': kinematics['p5_pz'], 'E': kinematics['p5_E']})#negative l2
+        l4 = vector.array({'px': kinematics['p6_px'], 'py': kinematics['p6_py'], 'pz': kinematics['p6_pz'], 'E': kinematics['p6_E']})#positive l2
 
         if self.algorithm == 'leastsquare':
             l1_1, l2_1, l1_2, l2_2 = self.find_Z_lsq(l1, l2, l3, l4)
         elif self.algorithm == 'closest':
             l1_1, l2_1, l1_2, l2_2 = self.find_Z_closest(l1, l2, l3, l4)
+        elif self.algorithm == 'truth':
+            l1_1, l2_1, l1_2, l2_2 = l1, l2, l3, l4
 
         Z1 = l1_1 + l2_1
         Z2 = l1_2 + l2_2
 
-        cond1 = np.where((Z1.mass>=self.bounds1[0])&(Z1.mass<=self.bounds1[1]))
-        cond2 = np.where((Z2.mass>=self.bounds2[0])&(Z2.mass<=self.bounds2[1]))
+        if self.bounds1 is not None:
+            cond1 = np.where((Z1.mass>=self.bounds1[0])&(Z1.mass<=self.bounds1[1]))
+        else:
+            cond1 = np.arange(Z1.mass.shape[0])
+
+        if self.bounds2 is not None:
+            cond2 = np.where((Z2.mass>=self.bounds2[0])&(Z2.mass<=self.bounds2[1]))
+        else:
+            cond2 = np.arange(Z2.mass.shape[0])
 
         # Get only indices where cond1 and cond2 apply
         indices = np.intersect1d(cond1,cond2)

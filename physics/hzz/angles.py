@@ -76,3 +76,31 @@ def calculate(l1: MomentumObject4D, l2: MomentumObject4D, l3: MomentumObject4D, 
     cth2 = - z1_in_Z2.dot(l3.to_3D())/np.abs(z1_in_Z2.mag*l3.to_3D().mag)
     
     return np.array([cth_star, cth1, cth2, phi1, phi, Z1.mass, Z2.mass, m4l]).T
+
+
+class M4lFilter():
+    def __init__(self, m4l_min=None, m4l_max=None):
+        self.m4l_min = m4l_min
+        self.m4l_max = m4l_max
+
+    def filter(self, kinematics, components, weights, probabilities):
+        l1 = vector.array({'px': kinematics['p3_px'], 'py': kinematics['p3_py'], 'pz': kinematics['p3_pz'], 'E': kinematics['p3_E']})#negative l1
+        l2 = vector.array({'px': kinematics['p4_px'], 'py': kinematics['p4_py'], 'pz': kinematics['p4_pz'], 'E': kinematics['p4_E']})#positive l1
+        l3 = vector.array({'px': kinematics['p5_px'], 'py': kinematics['p5_py'], 'pz': kinematics['p5_pz'], 'E': kinematics['p5_E']})#negative l2
+        l4 = vector.array({'px': kinematics['p6_px'], 'py': kinematics['p6_py'], 'pz': kinematics['p6_pz'], 'E': kinematics['p6_E']})#positive l2
+
+        m4l = (l1+l2+l3+l4).mass
+
+        if self.m4l_min is not None:
+            cond1 = np.where(m4l>=self.m4l_min)
+        else:
+            cond1 = np.arange(m4l.shape[0])
+
+        if self.m4l_max is not None:
+            cond2 = np.where(m4l<=self.m4l_max)
+        else:
+            cond2 = np.arange(m4l.shape[0])
+
+        indices = np.intersect1d(cond1, cond2)
+
+        return indices, None
