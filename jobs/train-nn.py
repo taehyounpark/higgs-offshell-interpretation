@@ -92,6 +92,27 @@ def parse_arguments():
 
     return {'sample_dir': sample_dir, 'output_dir': output_dir, 'flags': flags_active, 'learning_rate': learn_rate, 'batch_size': batch_size, 'num_events': num_events, 'num_layers': num_layers, 'num_nodes': num_nodes, 'epochs': epochs, 'c6_values': c6_values.tolist()}
 
+def load_samples(config, component_1, component_2):
+    if config['num_events'] is None:
+        n_i = None
+    else:
+        n_i = int(config['num_events']*1.2)#int(2*config['num_events']/3)
+
+    def match_comp(config, component, n_i):
+        match component:
+            case msq.Component.SIG:
+                sample = gghzz.Process(msq.Component.SIG, (0.1, os.path.join(config['sample_dir'], 'ggZZ2e2m_sig.csv'), n_i))
+            case msq.Component.SBI:
+                sample = gghzz.Process(msq.Component.SBI, (1.5, os.path.join(config['sample_dir'], 'ggZZ2e2m_sbi.csv'), n_i))
+            case msq.Component.BKG:
+                sample = gghzz.Process(msq.Component.BKG, (1.6, os.path.join(config['sample_dir'], 'ggZZ2e2m_bkg.csv'), n_i))
+            case msq.Component.INT:
+                sample = gghzz.Process(msq.Component.INT, (-0.2, os.path.join(config['sample_dir'], 'ggZZ2e2m_int.csv'), n_i))
+        return sample
+
+    return (match_comp(config, component_1, n_i), match_comp(config, component_2, n_i))
+
+
 
 def load_kinematics(sample, bounds1=(50,115), bounds2=(50,115), algorithm='leastsquare'):
     z_chooser = zpair.ZPairChooser(bounds1=bounds1, bounds2=bounds2, algorithm=algorithm)
@@ -107,7 +128,7 @@ def save_config(output_dir, *config):
         config_file.write(json.dumps(config, indent=4))
 
 def get_components(config):
-    component_flag = np.array(config['flags'])[np.where(np.array(config['flags']) in ['sig', 'int', 'sig-vs-sbi', 'int-vs-sbi', 'bkg-vs-sbi'])]
+    component_flag = np.array(config['flags'])[np.where([ (flag in ['sig', 'int', 'sig-vs-sbi', 'int-vs-sbi', 'bkg-vs-sbi']) for flag in config['flags'] ])]
     component_flag = component_flag[0] if component_flag.shape[0] != 0 else 'sbi'
     component_1, component_2 = component_flag.split('-')[0], component_flag.split('-')[-1]
     
@@ -157,17 +178,11 @@ def train_model(model, config, training_data, validation_data, callbacks=None, s
     val_dataset = tf.data.Dataset.from_tensor_slices((validation_data[:,:-2], validation_data[:,-2][:,tf.newaxis], validation_data[:,-1][:,tf.newaxis]))
 
     if 'distributed' in config['flags'] and strategy is not None:
-        train_dataset = train_dataset.batch(config['batch_size']*strategy.num_replicas_in_sync)
-        val_dataset = val_dataset.batch(config['batch_size']*strategy.num_replicas_in_sync)
+        with strategy.scope():
+            train_dataset = train_dataset.batch(config['batch_size']*strategy.num_replicas_in_sync)
+            val_dataset = val_dataset.batch(config['batch_size']*strategy.num_replicas_in_sync)
 
-        dist_train_dataset = strategy.experimental_distribute_dataset(train_dataset)
-        dist_val_dataset = strategy.experimental_distribute_dataset(val_dataset)
-
-        # Run model.fit
-        train_steps = int(training_data.shape[0]/config['batch_size']/strategy.num_replicas_in_sync)
-        val_steps = int(validation_data.shape[0]/config['batch_size']/strategy.num_replicas_in_sync)
-
-        history_callback = model.fit(dist_train_dataset, steps_per_epoch=train_steps, validation_data=dist_val_dataset, validation_steps=val_steps, callbacks=callbacks, epochs=config['epochs'], verbose=2)
+            history_callback = model.fit(train_dataset, validation_data=val_dataset, callbacks=callbacks, epochs=config['epochs'], verbose=2)
     else:
         train_dataset = train_dataset.batch(config['batch_size'])
         val_dataset = val_dataset.batch(config['batch_size'])
@@ -181,61 +196,60 @@ def train_model(model, config, training_data, validation_data, callbacks=None, s
 def main():
     config = parse_arguments()
 
-    if config['num_events'] is None:
-        n_i = None
-    else:
-        n_i = int(2*config['num_events']/3)
-
     mirrored_strategy = tf.distribute.MirroredStrategy()
+    if 'distributed' in config['flags']:
+        print(f'Model will be training on {mirrored_strategy.num_replicas_in_sync} GPUs')
 
-    sample = gghzz.Process(  
-        (1.4783394, os.path.join(config['sample_dir'], 'ggZZ2e2m_all_new.csv'), n_i),
-        (0.47412769, os.path.join(config['sample_dir'], 'ggZZ4e_all_new.csv'), n_i),
-        (0.47412769, os.path.join(config['sample_dir'], 'ggZZ4m_all_new.csv'), n_i)
-    )
+    component_1, component_2 = get_components(config)
 
-    set_size = sample.events.kinematics.shape[0]
+    sample_1, sample_2 = load_samples(config, component_1, component_2)
 
-    sample.events.filter(msq.ZeroMSQFilter('msq_int_sm'))
+    set_size_1, set_size_2 = sample_1.events.kinematics.shape[0], sample_2.events.kinematics.shape[0]
 
-    kin_variables = load_kinematics(sample)
+    sample_1.events.filter(msq.MSQFilter('msq_bkg_sm', value=0.0))
+    sample_1.events.filter(msq.MSQFilter('msq_bkg_sm', value=np.nan))
+    sample_2.events.filter(msq.MSQFilter('msq_bkg_sm', value=0.0))
+    sample_2.events.filter(msq.MSQFilter('msq_bkg_sm', value=np.nan))
 
-    true_size = kin_variables.shape[0]
+    kin_vars_1, kin_vars_2 = load_kinematics(sample_1), load_kinematics(sample_2)
 
-    print(f'Initial base size set to {int(set_size/2)}. Train and validation data will be {int(true_size/2)*2} each after Z mass cuts.')
+    sample_1.events = sample_1.events[:int(config['num_events'])]
+    kin_vars_1 = kin_vars_1[:int(config['num_events'])]
+
+    sample_2.events = sample_2.events[:int(config['num_events'])]
+    kin_vars_2 = kin_vars_2[:int(config['num_events'])]
+
+    true_size_1, true_size_2 = kin_vars_1.shape[0], kin_vars_2.shape[0]
+
+    print(f'Initial base size of {["SIG", "INT", "BKG", "SBI"][component_1.value-1]} set to {int(set_size_1)}. Train and validation data will be {int(true_size_1/2)*2} each after Z mass cuts.')
+    print(f'Initial base size of {["SIG", "INT", "BKG", "SBI"][component_2.value-1]} set to {int(set_size_2)}. Train and validation data will be {int(true_size_2/2)*2} each after Z mass cuts.')
+    print(f'Total dataset size after filters (per train, val): {int(true_size_1/2) + int(true_size_2/2)}')
 
 
-    component_c6, component_sm = get_components(config)
+    if component_1 != msq.Component.BKG:
+        c6_mod = c6.Modifier(baseline = component_1, c6_values = [-5,-1,0,1,5])
+        sig_weights, sig_prob = c6_mod.modify(sample=sample_1, c6=config['c6_values'])
+    else:
+        sig_weights, sig_prob = np.array(sample_1.events.weights)[:,np.newaxis], np.array(sample_1.events.probabilities)[:,np.newaxis]
+    
+    if component_1 == msq.Component.INT: # TODO: Fix this somehow
+        c6_mod = c6.Modifier(baseline = component_1, c6_values = [-5,0,5])
+        sig_weights, sig_prob = c6_mod.modify(sample=sample_1, c6=config['c6_values'])
+        sig_weights, sig_prob = -1 * sig_weights, -1 * sig_prob
 
-    if component_c6 != msq.Component.BKG:
-        c6_mod = c6.Modifier(amplitude_component = component_c6, c6_values = [-5,-1,0,1,5])
-        c6_weights, c6_prob = c6_mod.modify(sample=sample, c6=config['c6_values'])
-
-        train_data = datasets.build_dataset_tf(x_arr = kin_variables[:int(true_size/2)], 
-                                           param_values = config['c6_values'], 
-                                           signal_weights = c6_weights[:int(true_size/2)], 
-                                           background_weights = np.array(sample[component_sm].weights)[:int(true_size/2)], 
+    train_data = datasets.build_dataset_tf(x_arr_sig = kin_vars_1[:int(true_size_1/2)],
+                                           x_arr_bkg = kin_vars_2[:int(true_size_2/2)],
+                                           param_values = config['c6_values'],
+                                           signal_weights = sig_weights[:int(true_size_1/2)],
+                                           background_weights = np.array(sample_2.events.weights)[:int(true_size_2/2)],
                                            normalization = 1)
 
-        val_data = datasets.build_dataset_tf(x_arr = kin_variables[int(true_size/2):], 
-                                            param_values = config['c6_values'], 
-                                            signal_weights = c6_weights[int(true_size/2):], 
-                                            background_weights = np.array(sample[component_sm].weights)[int(true_size/2):], 
-                                            normalization = 1)
-    else:
-        bkg_weights, bkg_prob = np.array(sample[component_c6].weights)[:,np.newaxis], np.array(sample[component_c6].probabilities)[:,np.newaxis]
-
-        train_data = datasets.build_dataset_tf(x_arr = kin_variables[:int(true_size/2)], 
-                                               param_values = [0.0], 
-                                               signal_weights = bkg_weights[:int(true_size/2)], 
-                                               background_weights = np.array(sample[component_sm].weights)[:int(true_size/2)], 
-                                               normalization = 1)
-
-        val_data = datasets.build_dataset_tf(x_arr = kin_variables[int(true_size/2):], 
-                                             param_values = [0.0], 
-                                             signal_weights = bkg_weights[int(true_size/2):], 
-                                             background_weights = np.array(sample[component_sm].weights)[int(true_size/2):], 
-                                             normalization = 1)
+    val_data = datasets.build_dataset_tf(x_arr_sig = kin_vars_1[int(true_size_1/2):],
+                                         x_arr_bkg = kin_vars_2[int(true_size_2/2):],
+                                         param_values = config['c6_values'],
+                                         signal_weights = sig_weights[int(true_size_1/2):],
+                                         background_weights = np.array(sample_2.events.weights)[int(true_size_2/2):],
+                                         normalization = 1)
 
     
     # The following will scale only kinematics for nonprm and kinematics + c6 for prm
@@ -262,7 +276,7 @@ def main():
 
     # Train model
     history_callback = train_model(model, config, train_data, val_data, callbacks=[model_checkpoint_callback, tensorboard_callback], strategy=mirrored_strategy)
-
+    
     model.save(os.path.join(config['output_dir'], 'final.model.tf'), save_format='tf')
 
     with open(os.path.join(config['output_dir'], 'history.txt'), 'w') as hist_file:
