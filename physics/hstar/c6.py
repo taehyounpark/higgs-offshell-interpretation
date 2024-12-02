@@ -7,25 +7,20 @@ from ..simulation import mcfm
 
 class Modifier():
 
-  def __init__(self, amplitude_component = msq.Component.SBI, c6_values = [-5,-1,0,1,5]):
-    self.amplitude_component = amplitude_component
+  def __init__(self, baseline = msq.Component.SBI, c6_values = [-5,-1,0,1,5]):
+    self.baseline = baseline
     self.c6_values = np.array(c6_values)
-    self.c6_amplitudes = [mcfm.amplitude_c6[amplitude_component][c6_value] for c6_value in c6_values]
+    self.c6_components = [mcfm.component_c6[baseline][c6_value] for c6_value in c6_values]
 
   def modify(self, sample, c6):
 
     if np.isscalar(c6):
       c6 = np.array([c6])
 
-    events = sample[self.amplitude_component]
+    events = sample[self.baseline]
 
-    if self.amplitude_component == msq.Component.BKG:
-      wt_sm = np.ones((len(events.weights), len(c6)))
-      wt_sm *= events.weights
-      return (wt_sm, wt_sm / np.sum(wt_sm))
-
-    msq_sm = events.amplitudes[mcfm.amplitude_sm[self.amplitude_component]].to_numpy()
-    msq_c6 = np.array([events.amplitudes[c6_amplitude].to_numpy() for c6_amplitude in self.c6_amplitudes]).T
+    msq_sm = events.components[mcfm.component_sm[self.baseline]].to_numpy()
+    msq_c6 = np.array([events.components[c6_components].to_numpy() for c6_components in self.c6_components]).T
 
     # Solve the polynomial for each row
     coeffs = np.apply_along_axis(lambda x: np.linalg.solve(np.vander(self.c6_values, len(self.c6_values), increasing=True), x), 1, msq_c6 / msq_sm[:, np.newaxis])[:, ::-1]

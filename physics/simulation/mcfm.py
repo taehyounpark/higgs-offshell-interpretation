@@ -1,8 +1,17 @@
 from .msq import Component
 
+kinematics = [
+  'p1_px','p1_py','p1_pz','p1_E',
+  'p2_px','p2_py','p2_pz','p2_E',
+  'p3_px','p3_py','p3_pz','p3_E',
+  'p4_px','p4_py','p4_pz','p4_E',
+  'p5_px','p5_py','p5_pz','p5_E',
+  'p6_px','p6_py','p6_pz','p6_E',
+]
+
 weight = 'wt'
 
-amplitudes = [
+components = [
   'msq_sbi_sm', 'msq_sig_sm', 'msq_bkg_sm', 'msq_int_sm',
   'msq_sig_c6_1', 'msq_int_c6_1', 'msq_sbi_c6_1',
   'msq_sig_c6_2', 'msq_int_c6_2', 'msq_sbi_c6_2',
@@ -27,25 +36,14 @@ amplitudes = [
   'msq_sig_c6_21', 'msq_int_c6_21', 'msq_sbi_c6_21'
 ]
 
-kinematics = [
-  'p1_px','p1_py','p1_pz','p1_E',
-  'p2_px','p2_py','p2_pz','p2_E',
-  'p3_px','p3_py','p3_pz','p3_E',
-  'p4_px','p4_py','p4_pz','p4_E',
-  'p5_px','p5_py','p5_pz','p5_E',
-  'p6_px','p6_py','p6_pz','p6_E',
-]
-
-amplitude_base = 'msq_sbi_sm'
-
-amplitude_sm = {
+component_sm = {
   Component.SBI: 'msq_sbi_sm',
   Component.SIG: 'msq_sig_sm',
   Component.BKG: 'msq_bkg_sm',
   Component.INT: 'msq_int_sm'
 }
 
-amplitude_c6 = {
+component_c6 = {
   Component.SBI: {
     -10.0: 'msq_sbi_c6_1',
     -9.0: 'msq_sbi_c6_2',
