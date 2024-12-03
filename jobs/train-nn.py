@@ -24,18 +24,16 @@ from argparse import ArgumentParser
 SEED=373485
 
 def parse_arguments():
-    parser = ArgumentParser(prog='',
-                            description='',
-                            epilog='')
-    parser.add_argument('-l', '--learn-rate', help='Learning rate used with the Nadam optimizer. (default: 1e-5)')
-    parser.add_argument('-b', '--batch-size', help='Batch size for training the NN. (default: 32)')
-    parser.add_argument('-e', '--epochs', help='Maximum number of epochs in training. (default: 100)')
-    parser.add_argument('-n', '--num-events', help='Number of events N per class and c6 value. (default: full dataset)')
-    parser.add_argument('--num-layers', help='Number of dense layers between input and output layers in the NN. (default: 10)')
-    parser.add_argument('--num-nodes', help='Number of nodes per layer or comma separated numbers of nodes for all dense layers. (default: 2000)')
-    parser.add_argument('-s', '--sample-dir', help='Path to the directory containing the sample files. (default: ../../)')
-    parser.add_argument('-o', '--output-dir', help='Path to the directory where outputs files will be placed. Will be created is it does not exist yet. (default: ./)')
-    parser.add_argument('--c6', help='Single value for c6 or three comma separated values like a,b,c specifying a np.linspace(a,b,c). (default: -10,10,21)')
+    parser = ArgumentParser(description='Python script for training (deep) neural networks in a SM vs BSM classification scenario.')
+    parser.add_argument('-l', '--learn-rate', default=1e-5, type=float, help='Learning rate used with the Nadam optimizer.')
+    parser.add_argument('-b', '--batch-size', default=32, type=int, help='Batch size for training the NN.')
+    parser.add_argument('-e', '--epochs', default=100, type=int, help='Maximum number of epochs in training.')
+    parser.add_argument('-n', '--num-events', default=None, type=int, help='Number of events N per class and c6 value.')
+    parser.add_argument('--num-layers', default=10, type=int, help='Number of dense layers between input and output layers in the NN.')
+    parser.add_argument('--num-nodes', default='2000', type=str, help='Number of nodes per layer or comma separated numbers of nodes for all dense layers.')
+    parser.add_argument('-s', '--sample-dir', default='../../', type=str, help='Path to the directory containing the sample files.')
+    parser.add_argument('-o', '--output-dir', default='./', type=str, help='Path to the directory where outputs files will be placed. Will be created is it does not exist yet.')
+    parser.add_argument('--c6', default='-10,10,21', type=str, help='Single value for c6 or three comma separated values like a,b,c specifying a np.linspace(a,b,c).')
     parser.add_argument('--sig', action='store_true', help='Use for enabling training on SIG data only.')
     parser.add_argument('--int', action='store_true', help='Use for enabling training on INT data only.')
     parser.add_argument('--sig-vs-sbi', action='store_true', help='Use for enabling training on SIG(c6) vs SBI(SM).')
@@ -45,34 +43,35 @@ def parse_arguments():
 
     args = parser.parse_args()
 
-    sample_dir = '../..' if args.sample_dir is None else str(args.sample_dir)
-    output_dir = '.' if args.output_dir is None else str(args.output_dir)
-    learn_rate = 1e-5 if args.learn_rate is None else float(args.learn_rate)
-    batch_size = 32 if args.batch_size is None else int(args.batch_size)
-    num_events = None if args.num_events is None else int(args.num_events)
-    num_layers = 10 if args.num_layers is None else int(args.num_layers)
-    epochs = 100 if args.epochs is None else int(args.epochs)
-
-    num_flags_components = np.sum(np.array([args.sig, args.int, args.sig_vs_sbi, args.int_vs_sbi, args.bkg_vs_sbi]).astype(int))
-
-    if num_flags_components > 1:
+    # Only one of the component flags can be activated at once
+    component_flags = np.array([args.sig, args.int, args.sig_vs_sbi, args.int_vs_sbi, args.bkg_vs_sbi])
+    num_component_flags = np.sum(component_flags.astype(int))
+    if num_component_flags > 1:
         raise ValueError('You can only activate one of [sig, int, sig-vs-sbi, int-vs-sbi, bkg-vs-sbi] at once')
 
-    flag_component = np.array(['sig', 'int', 'sig-vs-sbi', 'int-vs-sbi', 'bkg-vs-sbi'])[np.where(np.array([args.sig, args.int, args.sig_vs_sbi, args.int_vs_sbi, args.bkg_vs_sbi])==True)]
-    flag_component = flag_component[0] if flag_component.shape[0] != 0 else ''
 
+    component_flag = np.array(['sig', 'int', 'sig-vs-sbi', 'int-vs-sbi', 'bkg-vs-sbi'])[np.where(component_flags==True)]
+    component_flag = component_flag[0] if component_flag.shape[0] != 0 else ''
+
+    # Add component flag to flag list if enabled
+    if component_flag == '':
+        flags_active = []
+    else:
+        flags_active = [component_flag]
+
+    # Add all other flags to flag list
     flags_values = {'distributed': args.distributed}
-    flags_active = [flag_component]
-
     for key,value in flags_values.items():
         if value is True:
             flags_active.append(key)
 
+    # For BKG no c6 is needed
     if 'bkg-vs-sbi' in flags_active:
         c6_input = np.array([0.0])
     else:
         c6_input = np.array([-10,10,21]) if args.c6 is None else np.fromstring(args.c6, sep=',')
 
+    # Build c6 array from the input to the c6 argument
     if len(c6_input) == 1:
         c6_values = c6_input
     elif len(c6_input) == 3:
@@ -80,17 +79,17 @@ def parse_arguments():
     else:
         raise ValueError('c6 should be a single value or three comma separated values like a,b,c specifying a np.linspace(a,b,c)')
     
-    n_nodes_input = np.array([2000]) if args.num_nodes is None else np.fromstring(args.num_nodes.replace('[','').replace(']',''), sep=',')
-
+    # Build num_nodes array from the input to the num-nodes argument
+    n_nodes_input = np.fromstring(args.num_nodes.replace('[','').replace(']',''), sep=',')
     if len(n_nodes_input) == 1:
         num_nodes = n_nodes_input.item()
-    elif len(n_nodes_input) == num_layers:
+    elif len(n_nodes_input) == args.num_layers:
         num_nodes = n_nodes_input.tolist()
     else:
-        raise ValueError('num_nodes should be a single value or a comma separated list of integer values fulfilling len(num_nodes)=num_layers')
+        raise ValueError('num-nodes should be a single value or a comma separated list of integer values with a length equals len(num-nodes)=num-layers')
     
 
-    return {'sample_dir': sample_dir, 'output_dir': output_dir, 'flags': flags_active, 'learning_rate': learn_rate, 'batch_size': batch_size, 'num_events': num_events, 'num_layers': num_layers, 'num_nodes': num_nodes, 'epochs': epochs, 'c6_values': c6_values.tolist()}
+    return {'sample_dir': args.sample_dir, 'output_dir': args.output_dir, 'flags': flags_active, 'learning_rate': args.learn_rate, 'batch_size': args.batch_size, 'num_events': args.num_events, 'num_layers': args.num_layers, 'num_nodes': num_nodes, 'epochs': args.epochs, 'c6_values': c6_values.tolist()}
 
 def load_samples(config, component_1, component_2):
     if config['num_events'] is None:
@@ -194,6 +193,8 @@ def train_model(model, config, training_data, validation_data, callbacks=None, s
 
 
 def main():
+    rng = np.random.default_rng(seed=SEED)
+
     config = parse_arguments()
 
     mirrored_strategy = tf.distribute.MirroredStrategy()
@@ -225,7 +226,6 @@ def main():
     print(f'Initial base size of {["SIG", "INT", "BKG", "SBI"][component_2.value-1]} set to {int(set_size_2)}. Train and validation data will be {int(true_size_2/2)*2} each after Z mass cuts.')
     print(f'Total dataset size after filters (per train, val): {int(true_size_1/2) + int(true_size_2/2)}')
 
-
     if component_1 != msq.Component.BKG:
         c6_mod = c6.Modifier(baseline = component_1, c6_values = [-5,-1,0,1,5])
         sig_weights, sig_prob = c6_mod.modify(sample=sample_1, c6=config['c6_values'])
@@ -237,20 +237,19 @@ def main():
         sig_weights, sig_prob = c6_mod.modify(sample=sample_1, c6=config['c6_values'])
         sig_weights, sig_prob = -1 * sig_weights, -1 * sig_prob
 
-    train_data = datasets.build_dataset_tf(x_arr_sig = kin_vars_1[:int(true_size_1/2)],
-                                           x_arr_bkg = kin_vars_2[:int(true_size_2/2)],
-                                           param_values = config['c6_values'],
-                                           signal_weights = sig_weights[:int(true_size_1/2)],
-                                           background_weights = np.array(sample_2.events.weights)[:int(true_size_2/2)],
-                                           normalization = 1)
-
-    val_data = datasets.build_dataset_tf(x_arr_sig = kin_vars_1[int(true_size_1/2):],
-                                         x_arr_bkg = kin_vars_2[int(true_size_2/2):],
-                                         param_values = config['c6_values'],
-                                         signal_weights = sig_weights[int(true_size_1/2):],
-                                         background_weights = np.array(sample_2.events.weights)[int(true_size_2/2):],
-                                         normalization = 1)
-
+    train_data = datasets.build_dataset_random(x_arr_sig = kin_vars_1[:int(true_size_1/2)], 
+                                               x_arr_bkg = kin_vars_2[:int(true_size_2/2)],
+                                               param_values = config['c6_values'],
+                                               signal_probabilities = sig_prob[:int(true_size_1/2)],
+                                               background_probabilities = np.array(sample_2.events.probabilities)[:int(true_size_2/2)],
+                                               seed = SEED)
+    
+    val_data = datasets.build_dataset_random(x_arr_sig = kin_vars_1[int(true_size_1/2):],
+                                             x_arr_bkg = kin_vars_2[int(true_size_2/2):],
+                                             param_values = config['c6_values'],
+                                             signal_probabilities = sig_prob[int(true_size_1/2):],
+                                             background_probabilities = np.array(sample_2.events.probabilities)[int(true_size_2/2):],
+                                             seed = SEED)
     
     # The following will scale only kinematics for nonprm and kinematics + c6 for prm
     train_scaler = StandardScaler()
