@@ -38,11 +38,16 @@ source ../../venv/bin/activate
         script_file.write(script_contents)
     return script_path
 
-def submit_job(job):
+def create_job(job):
     runstring, _, _ = job
     script_path = write_job(job)
-
     shutil.copyfile('train-nn.py', f'{runstring}/execute.py')
+
+    return script_path
+
+def submit_job(job):
+    runstring, _, _ = job
+    script_path = create_job(job)
     
     try:
         subprocess.run(f"sbatch {script_path}", shell=True, check=True)
@@ -53,7 +58,7 @@ def define_job(runstring, slurm_params, train_params, train_flags=[]):
     command = f'python {runstring}/execute.py '
 
     train_params_all = ['learn-rate', 'batch-size', 'epochs', 'num-events', 'num-layers', 'num-nodes', 'sample-dir', 'c6']
-    train_flags_all = ['sig','int','sig-vs-sbi','int-vs-sbi','bkg-vs-sbi']
+    train_flags_all = ['sig','int','sig-vs-sbi','int-vs-sbi','bkg-vs-sbi','distributed']
 
     for flag in train_flags:
         if flag in train_flags_all:
@@ -73,28 +78,96 @@ def define_job(runstring, slurm_params, train_params, train_flags=[]):
     return (runstring, command, slurm_params)
 
 def main():
-    joblist = [
-        define_job('train-multi-SIG', 
-                   slurm_params={'time': '16:00:00', 'n-cpus': 36, 'n-gpus': 2, 'mem': 60000}, 
-                   train_flags=['sig'], 
-                   train_params={'num-events': 1000, 'c6': [-20,20,2001], 'epochs': 120, 'batch-size': 32, 'learning-rate': 1e-5}),
-        define_job('train-multi-SBI', 
-                   slurm_params={'time': '16:00:00', 'n-cpus': 36, 'n-gpus': 2, 'mem': 60000},
-                   train_params={'num-events': 1000, 'c6': [-20,20,2001], 'epochs': 120, 'batch-size': 32, 'learning-rate': 1e-5})
-    ]
 
     joblist = [
         define_job('train-SIG-vs-SBI',
-                   slurm_params={'time': '24:00:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
+                   slurm_params={'time': '23:50:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
                    train_flags=['sig-vs-sbi'],
                    train_params={'num-events': 100000, 'c6': [-20,20,11], 'epochs': 120, 'batch-size': 32, 'learning-rate': 1e-5}),
         define_job('train-INT-vs-SBI',
-                   slurm_params={'time': '24:00:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
+                   slurm_params={'time': '23:50:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
                    train_flags=['int-vs-sbi'],
                    train_params={'num-events': 100000, 'c6': [-20,20,11], 'epochs': 120, 'batch-size': 32, 'learning-rate': 1e-5}),
         define_job('train-BKG-vs-SBI',
                     slurm_params={'time': '16:00:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
+                    train_flags=['bkg-vs-sbi'],
                     train_params={'num-events': 100000, 'epochs':80, 'batch-size': 32, 'learning-rate':1e-5})
+    ]
+
+    joblist = [
+        define_job('train-SIG-vs-SBI-shallow',
+                   slurm_params={'time': '23:00:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
+                   train_flags=['sig-vs-sbi'],
+                   train_params={'num-events': 100000, 'c6': [-20,20,11], 'epochs': 100, 'batch-size': 32, 'learning-rate': 1e-5, 'num-layers': 2, 'num-nodes': 100}),
+        define_job('train-SIG-shallow',
+                   slurm_params={'time': '23:00:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
+                   train_flags=['sig'],
+                   train_params={'num-events': 100000, 'c6': [-20,20,11], 'epochs': 100, 'batch-size': 32, 'learning-rate': 1e-5, 'num-layers': 2, 'num-nodes': 100}),
+        define_job('train-BKG-vs-SBI-shallow',
+                   slurm_params={'time': '23:00:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
+                   train_flags=['bkg-vs-sbi'],
+                   train_params={'num-events': 100000, 'c6': [-20,20,11], 'epochs': 100, 'batch-size': 32, 'learning-rate': 1e-5, 'num-layers': 2, 'num-nodes': 100})
+    ]
+
+    joblist = [
+        define_job('train-BKG-vs-SBI-mediumnet',
+                    slurm_params={'time': '16:00:00', 'n-cpus': 8, 'n-gpus': 1, 'mem': 60000},
+                    train_flags=['bkg-vs-sbi'],
+                    train_params={'num-events': 100000, 'num-layers': 3, 'num-nodes': 300, 'epochs':150, 'batch-size': 32, 'learning-rate':1e-5}),
+        define_job('train-BKG-vs-SBI-deepnet',
+                    slurm_params={'time': '21:00:00', 'n-cpus': 8, 'n-gpus': 1, 'mem': 60000},
+                    train_flags=['bkg-vs-sbi'],
+                    train_params={'num-events': 100000, 'num-layers': 5, 'num-nodes': 500, 'epochs':150, 'batch-size': 32, 'learning-rate':1e-5}),
+        define_job('train-SIG-vs-SBI-mediumnet',
+                    slurm_params={'time': '23:30:00', 'n-cpus': 8, 'n-gpus': 1, 'mem': 60000},
+                    train_flags=['sig-vs-sbi'],
+                    train_params={'num-events': 100000, 'c6': [-20,20,11], 'num-layers': 3, 'num-nodes': 300, 'epochs':150, 'batch-size': 32, 'learning-rate':1e-5}),
+        define_job('train-SIG-vs-SBI-deepnet',
+                    slurm_params={'time': '23:30:00', 'n-cpus': 8, 'n-gpus': 1, 'mem': 60000},
+                    train_flags=['sig-vs-sbi'],
+                    train_params={'num-events': 100000, 'c6': [-20,20,11], 'num-layers': 5, 'num-nodes': 500, 'epochs':150, 'batch-size': 32, 'learning-rate':1e-5}),   
+        define_job('train-INT-vs-SBI-mediumnet',
+                    slurm_params={'time': '23:30:00', 'n-cpus': 8, 'n-gpus': 1, 'mem': 60000},
+                    train_flags=['int-vs-sbi'],
+                    train_params={'num-events': 100000, 'c6': [-20,20,11], 'num-layers': 3, 'num-nodes': 300, 'epochs':150, 'batch-size': 32, 'learning-rate':1e-5}),
+        define_job('train-INT-vs-SBI-deepnet',
+                    slurm_params={'time': '23:30:00', 'n-cpus': 8, 'n-gpus': 1, 'mem': 60000},
+                    train_flags=['int-vs-sbi'],
+                    train_params={'num-events': 100000, 'c6': [-20,20,11], 'num-layers': 5, 'num-nodes': 500, 'epochs':150, 'batch-size': 32, 'learning-rate':1e-5})
+    ]
+
+    joblist = [
+        define_job('train-BKG-vs-SBI-2x100-500k',
+                    slurm_params={'time': '16:00:00', 'n-cpus': 8, 'n-gpus': 1, 'mem': 60000},
+                    train_flags=['bkg-vs-sbi'],
+                    train_params={'num-events': 500000, 'num-layers': 2, 'num-nodes': 100, 'epochs':110, 'batch-size': 32, 'learning-rate':1e-5}),
+        define_job('train-BKG-vs-SBI-5x1000-500k',
+                    slurm_params={'time': '16:00:00', 'n-cpus': 8, 'n-gpus': 1, 'mem': 60000},
+                    train_flags=['bkg-vs-sbi'],
+                    train_params={'num-events': 500000, 'num-layers': 5, 'num-nodes': 1000, 'epochs':110, 'batch-size': 32, 'learning-rate':1e-5}),
+        define_job('train-BKG-vs-SBI-3x300-500k',
+                    slurm_params={'time': '16:00:00', 'n-cpus': 8, 'n-gpus': 1, 'mem': 60000},
+                    train_flags=['bkg-vs-sbi'],
+                    train_params={'num-events': 500000, 'num-layers': 3, 'num-nodes': 300, 'epochs':110, 'batch-size': 32, 'learning-rate':1e-5}),
+        define_job('train-BKG-vs-SBI-5x500-500k',
+                    slurm_params={'time': '16:00:00', 'n-cpus': 8, 'n-gpus': 1, 'mem': 60000},
+                    train_flags=['bkg-vs-sbi'],
+                    train_params={'num-events': 500000, 'num-layers': 5, 'num-nodes': 500, 'epochs':110, 'batch-size': 32, 'learning-rate':1e-5}),
+        define_job('train-BKG-vs-SBI-10x2000-500k',
+                    slurm_params={'time': '16:00:00', 'n-cpus': 8, 'n-gpus': 1, 'mem': 60000},
+                    train_flags=['bkg-vs-sbi'],
+                    train_params={'num-events': 500000, 'num-layers': 10, 'num-nodes': 2000, 'epochs':110, 'batch-size': 32, 'learning-rate':1e-5})
+    ]
+
+    joblist = [
+        define_job('train-SIG-10x2000-100k',
+                   slurm_params={'time': '23:30:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
+                   train_flags=['sig'],
+                   train_params={'num-events': 100000, 'c6': [-20,20,11], 'epochs': 100, 'batch-size': 32, 'learning-rate': 1e-5, 'num-layers': 10, 'num-nodes': 2000}),
+        define_job('train-SIG-2x100-1M',
+                   slurm_params={'time': '23:30:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
+                   train_flags=['sig'],
+                   train_params={'num-events': 1000000, 'c6': [-20,20,11], 'epochs': 100, 'batch-size': 32, 'learning-rate': 1e-5, 'num-layers': 2, 'num-nodes': 100})
     ]
 
     for job in joblist:
@@ -105,7 +178,7 @@ def main():
     #               slurm_params={'time': '12:00:00', 'n-cpus': 36, 'n-gpus': 4, 'mem': 100000},
     #               train_flags=['int-vs-sbi'],
     #               train_params={'num-events': 100000, 'c6': [-20,20,101], 'epochs': 120, 'batch_size': 32, 'learning_rate': 1e-5})
-    #submit_job(job)
+    #create_job(job)
 
 if __name__ == '__main__':
     main()
