@@ -72,6 +72,14 @@ def build_dataset_tf(x_arr_sig, x_arr_bkg, param_values, signal_weights, backgro
     return data
 
 def build_dataset_random(x_arr_sig, x_arr_bkg, param_values, signal_probabilities, background_probabilities, seed=None):
+    non_prm=False
+
+    if np.isscalar(param_values):
+        param_values = [param_values]
+        non_prm=True
+    elif len(param_values) == 1:
+        non_prm=True
+    
     rng = np.random.default_rng(seed=seed)
     param_per_event = rng.choice(param_values, x_arr_sig.shape[0])
 
@@ -85,7 +93,8 @@ def build_dataset_random(x_arr_sig, x_arr_bkg, param_values, signal_probabilitie
     # signal weights should be renormalized per param value
     for i in range(len(param_values)):
         sig_probabilities[np.where(param_per_event == param_values[i])] /= np.sum(sig_probabilities[np.where(param_per_event == param_values[i])])
-        print(np.sum(sig_probabilities[np.where(param_per_event == param_values[i])]))
+    
+    sig_probabilities /= np.array(param_values).shape[0]
 
     sig_data = tf.concat([tf.convert_to_tensor(x_arr_sig, dtype=tf.float32), tf.convert_to_tensor(param_per_event, dtype=tf.float32)[:,tf.newaxis], tf.ones(x_arr_sig.shape[0])[:,tf.newaxis], tf.convert_to_tensor(sig_probabilities, dtype=tf.float32)[:,tf.newaxis]], axis=1)
 
