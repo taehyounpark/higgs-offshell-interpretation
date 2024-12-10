@@ -25,51 +25,34 @@ SEED=373485
 
 def parse_arguments():
     parser = ArgumentParser(description='Python script for training (deep) neural networks in a SM vs BSM classification scenario.')
-    parser.add_argument('-l', '--learn-rate', default=1e-5, type=float, help='Learning rate used with the Nadam optimizer.')
-    parser.add_argument('-b', '--batch-size', default=32, type=int, help='Batch size for training the NN.')
-    parser.add_argument('-e', '--epochs', default=100, type=int, help='Maximum number of epochs in training.')
-    parser.add_argument('-n', '--num-events', default=None, type=int, help='Number of events N per class and c6 value.')
-    parser.add_argument('--num-layers', default=10, type=int, help='Number of dense layers between input and output layers in the NN.')
-    parser.add_argument('--num-nodes', default='2000', type=str, help='Number of nodes per layer or comma separated numbers of nodes for all dense layers.')
-    parser.add_argument('-s', '--sample-dir', default='../../', type=str, help='Path to the directory containing the sample files.')
-    parser.add_argument('-o', '--output-dir', default='./', type=str, help='Path to the directory where outputs files will be placed. Will be created is it does not exist yet.')
-    parser.add_argument('--c6', default='-10,10,21', type=str, help='Single value for c6 or three comma separated values like a,b,c specifying a np.linspace(a,b,c).')
-    parser.add_argument('--sig', action='store_true', help='Use for enabling training on SIG data only.')
-    parser.add_argument('--int', action='store_true', help='Use for enabling training on INT data only.')
-    parser.add_argument('--sig-vs-sbi', action='store_true', help='Use for enabling training on SIG(c6) vs SBI(SM).')
-    parser.add_argument('--int-vs-sbi', action='store_true', help='Use for enabling training on INT(c6) vs SBI(SM).')
-    parser.add_argument('--bkg-vs-sbi', action='store_true', help='Use for enabling training on BKG(c6) vs SBI(SM).')
-    parser.add_argument('--distributed', action='store_true', help='Enable distributed learning (experimental).')
+    parser.add_argument('config', type=str, help='Config file to be used for setting necessary parameters.')
 
     args = parser.parse_args()
+    return args
+
+def load_config(config_path):
+    with open(config_path, 'r') as config_file:
+        config = json.loads(''.join(config_file.readlines()))
 
     # Only one of the component flags can be activated at once
-    component_flags = np.array([args.sig, args.int, args.sig_vs_sbi, args.int_vs_sbi, args.bkg_vs_sbi])
-    num_component_flags = np.sum(component_flags.astype(int))
-    if num_component_flags > 1:
-        raise ValueError('You can only activate one of [sig, int, sig-vs-sbi, int-vs-sbi, bkg-vs-sbi] at once')
+    component_flags = np.array(['sig-vs-sig', 'sig-vs-sbi', 'int-vs-sbi', 'bkg-vs-sbi'])
+    num_c_flags = np.sum(np.array([c_flag in config[0]['flags'] for c_flag in component_flags]).astype(int))
 
+    if num_c_flags > 1:
+        raise ValueError('You can only activate one of [sig-vs-sig, sig-vs-sbi, int-vs-sbi, bkg-vs-sbi] at once')
 
-    component_flag = np.array(['sig', 'int', 'sig-vs-sbi', 'int-vs-sbi', 'bkg-vs-sbi'])[np.where(component_flags==True)]
-    component_flag = component_flag[0] if component_flag.shape[0] != 0 else ''
-
-    # Add component flag to flag list if enabled
-    if component_flag == '':
-        flags_active = []
-    else:
-        flags_active = [component_flag]
-
-    # Add all other flags to flag list
-    flags_values = {'distributed': args.distributed}
-    for key,value in flags_values.items():
-        if value is True:
-            flags_active.append(key)
+    # Add all active flags to flag list
+    flags_active = []
+    flags_possible = ['distributed', 'sig-vs-sig', 'sig-vs-sbi', 'int-vs-sbi', 'bkg-vs-sbi']
+    for flag in flags_possible:
+        if flag in config[0]['flags']:
+            flags_active.append(flag)
 
     # For BKG no c6 is needed
     if 'bkg-vs-sbi' in flags_active:
         c6_input = np.array([0.0])
     else:
-        c6_input = np.array([-10,10,21]) if args.c6 is None else np.fromstring(args.c6, sep=',')
+        c6_input = np.fromstring(config[0]['c6_values'].replace('[','').replace(']',''), sep=',')
 
     # Build c6 array from the input to the c6 argument
     if len(c6_input) == 1:
@@ -80,10 +63,10 @@ def parse_arguments():
         raise ValueError('c6 should be a single value or three comma separated values like a,b,c specifying a np.linspace(a,b,c)')
     
     # Build num_nodes array from the input to the num-nodes argument
-    n_nodes_input = np.fromstring(args.num_nodes.replace('[','').replace(']',''), sep=',')
+    n_nodes_input = np.fromstring(config[0]['num_nodes'].replace('[','').replace(']',''), sep=',')
     if len(n_nodes_input) == 1:
         num_nodes = n_nodes_input.item()
-    elif len(n_nodes_input) == args.num_layers:
+    elif len(n_nodes_input) == config[0]['num_layers']:
         num_nodes = n_nodes_input.tolist()
     else:
         raise ValueError('num-nodes should be a single value or a comma separated list of integer values with a length equals len(num-nodes)=num-layers')
@@ -192,10 +175,8 @@ def train_model(model, config, training_data, validation_data, callbacks=None, s
     return history_callback
 
 
-def main():
+def main(config):
     rng = np.random.default_rng(seed=SEED)
-
-    config = parse_arguments()
 
     mirrored_strategy = tf.distribute.MirroredStrategy()
     if 'distributed' in config['flags']:
@@ -286,4 +267,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    args = parse_arguments()
+
+    config = load_config(args.config)
+
+    main(config)
