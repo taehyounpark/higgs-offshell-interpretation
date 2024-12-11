@@ -40,12 +40,12 @@ def build_dataset(x_arr, param_values, signal_probabilities, background_probabil
             inputs = tf.concat([x_arr, tf.ones(x_arr.shape[0])[:,tf.newaxis]*param], axis=1)
             targets = tf.cast(signal_probabilities.T[i][:,tf.newaxis]/background_probabilities[:,tf.newaxis], tf.float32)
 
-            data.append(tf.concat([inputs, targets], axis=0))
+            data.append(tf.concat([inputs, targets], axis=1))
         else:
             inputs = x_arr
             targets = tf.cast(signal_probabilities.T[i][:,tf.newaxis]/background_probabilities[:,tf.newaxis], tf.float32)
 
-            data.append(tf.concat([inputs, targets], axis=0))
+            data.append(tf.concat([inputs, targets], axis=1))
 
     data = tf.reshape(tf.convert_to_tensor(data), (tf.convert_to_tensor(data).shape[0]*tf.convert_to_tensor(data).shape[1], tf.convert_to_tensor(data).shape[2]))
 
@@ -80,7 +80,7 @@ def load_kinematics(sample, bounds1=(70,115), bounds2=(70,115), algorithm='least
 def build(config, seed, strategy=None):
     component_1, component_2 = get_components(config)
 
-    sample_2 = load_sample(config, component_1, component_2)
+    sample_2 = load_sample(config, component_2)
 
     set_size_2 = sample_2.events.kinematics.shape[0]
 
@@ -125,7 +125,7 @@ def build(config, seed, strategy=None):
     val_data = tf.concat([train_scaler.transform(val_data[:,:-1]), val_data[:,-1][:, tf.newaxis]], axis=1)
     val_data = tf.random.shuffle(val_data, seed=seed)
 
-    scaler_config = {'scaler.scale_': train_scaler.scale_, 'scaler.min_': train_scaler.min_}
+    scaler_config = {'scaler.scale_': train_scaler.scale_.tolist(), 'scaler.min_': train_scaler.min_.tolist()}
     with open('scaler.json', 'w') as scaler_file:
         scaler_file.write(json.dumps(scaler_config, indent=4))
 
