@@ -56,7 +56,7 @@ def build(config, strategy=None):
                 epsilon=1e-07
             )
 
-            model.compile(optimizer=optimizer, loss='mean_squared_error', metrics=['binary_accuracy'], weighted_metrics=['binary_accuracy'])
+            model.compile(optimizer=optimizer, loss='mean_squared_error')
     else:
         if len(config['c6_values']) == 1:
             model = ROLR_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=9)
@@ -70,7 +70,7 @@ def build(config, strategy=None):
             epsilon=1e-07
         )
 
-        model.compile(optimizer=optimizer, loss='mean_squared_error', metrics=['binary_accuracy'], weighted_metrics=['binary_accuracy'])
+        model.compile(optimizer=optimizer, loss='mean_squared_error')
     
     return model
 
