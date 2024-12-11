@@ -21,14 +21,14 @@ def parse_arguments():
 
 def load_config(config_path):
     with open(config_path, 'r') as config_file:
-        config = json.loads(config_file)
+        config = json.load(config_file)
 
     # Only one of the component flags can be activated at once
     component_flags = np.array(['sig-vs-sig', 'sig-vs-sbi', 'int-vs-sbi', 'bkg-vs-sbi', 'sbi-vs-sig', 'int-vs-sig', 'bkg-vs-sig'])
     num_c_flags = np.sum(np.array([c_flag in config['flags'] for c_flag in component_flags]).astype(int))
 
     if num_c_flags > 1:
-        raise ValueError('You can only activate one of [sig-vs-sig, sig-vs-sbi, int-vs-sbi, bkg-vs-sbi] at once')
+        raise ValueError('You can only activate one of [sig-vs-sig, sig-vs-sbi, int-vs-sbi, bkg-vs-sbi, sbi-vs-sig, int-vs-sig, bkg-vs-sig] at once')
 
     # Add all active flags to flag list
     flags_active = []

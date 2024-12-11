@@ -12,9 +12,9 @@ def swish_activation(x, b=1):
 keras.utils.get_custom_objects().update({'swish_activation': keras.layers.Activation(swish_activation)})
 
 @keras.utils.register_keras_serializable()
-class ROLR_regr(keras.Model):
+class ROLR_reg(keras.Model):
     def __init__(self, num_layers=10, num_nodes=2000, input_dim=9, **kwargs):
-        super(ROLR_regr, self).__init__(**kwargs)
+        super(ROLR_reg, self).__init__(**kwargs)
         
         swish = keras.layers.Activation(swish_activation, name='Swish')
 
@@ -45,9 +45,9 @@ def build(config, strategy=None):
     if 'distributed' in config['flags'] and strategy is not None:
         with strategy.scope():
             if len(config['c6_values']) == 1:
-                model = ROLR_regr(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=9)
+                model = ROLR_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=9)
             else:
-                model = ROLR_regr(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=10)
+                model = ROLR_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=10)
 
             optimizer = keras.optimizers.Nadam(
                 learning_rate=config['learning_rate'],
@@ -59,9 +59,9 @@ def build(config, strategy=None):
             model.compile(optimizer=optimizer, loss='mean_squared_error', metrics=['binary_accuracy'], weighted_metrics=['binary_accuracy'])
     else:
         if len(config['c6_values']) == 1:
-            model = ROLR_regr(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=9)
+            model = ROLR_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=9)
         else:
-            model = ROLR_regr(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=10)
+            model = ROLR_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=10)
 
         optimizer = keras.optimizers.Nadam(
             learning_rate=config['learning_rate'],

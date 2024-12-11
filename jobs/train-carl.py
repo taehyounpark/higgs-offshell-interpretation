@@ -21,7 +21,7 @@ def parse_arguments():
 
 def load_config(config_path):
     with open(config_path, 'r') as config_file:
-        config = json.loads(''.join(config_file.readlines()))
+        config = json.load(config_file)
 
     # Only one of the component flags can be activated at once
     component_flags = np.array(['sig-vs-sig', 'sig-vs-sbi', 'int-vs-sbi', 'bkg-vs-sbi'])
