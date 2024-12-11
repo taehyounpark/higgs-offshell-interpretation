@@ -1,6 +1,7 @@
 __pycache__/
 
 inference/
+venv/
 
 *.dat
 *.csv
