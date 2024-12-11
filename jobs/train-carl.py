@@ -7,7 +7,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import tensorflow as tf
 
-from nn.rolr import dataset, model
+from nn.carl import dataset, model
 
 
 SEED=373485
@@ -78,15 +78,15 @@ def main(config):
     train_dataset, val_dataset = dataset.build(config, SEED, mirrored_strategy)
 
     # Build model (distributed if flag given)
-    model_rolypoly = model.build(config, mirrored_strategy)
+    model_carl = model.build(config, mirrored_strategy)
 
     # Train model
-    history_callback = model.train(model_rolypoly, config, train_dataset, val_dataset, strategy=mirrored_strategy)
+    history_callback = model.train(model_carl, config, train_dataset, val_dataset, strategy=mirrored_strategy)
     
     # Save model
-    model.save(model_rolypoly, history_callback)
+    model.save(model_carl, history_callback)
 
-    print(model_rolypoly.summary())
+    print(model_carl.summary())
 
 
 if __name__ == '__main__':
