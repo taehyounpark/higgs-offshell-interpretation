@@ -170,6 +170,43 @@ def main():
                    train_params={'num-events': 1000000, 'c6': [-20,20,11], 'epochs': 100, 'batch-size': 32, 'learning-rate': 1e-5, 'num-layers': 2, 'num-nodes': 100})
     ]
 
+    joblist = [
+        define_job('train-SIG-vs-SBI-10x2000-2M',
+                   slurm_params={'time': '23:30:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 120000},
+                   train_flags=['sig-vs-sbi'],
+                   train_params={'num-events': 2000000, 'c6': [-20,20,2001], 'epochs': 100, 'batch-size': 32, 'learning-rate': 1e-5, 'num-layers': 10, 'num-nodes': 2000}),
+        define_job('train-SIG-vs-SBI-2x100-2M',
+                   slurm_params={'time': '23:30:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 120000},
+                   train_flags=['sig-vs-sbi'],
+                   train_params={'num-events': 2000000, 'c6': [-20,20,2001], 'epochs': 100, 'batch-size': 32, 'learning-rate': 1e-5, 'num-layers': 2, 'num-nodes': 100}),
+        define_job('train-SIG-2x100-2M',
+                   slurm_params={'time': '23:30:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 120000},
+                   train_flags=['sig'],
+                   train_params={'num-events': 2000000, 'c6': [-20,20,2001], 'epochs': 100, 'batch-size': 32, 'learning-rate': 1e-5, 'num-layers': 2, 'num-nodes': 100})
+    ]
+
+    joblist = [
+        define_job('train-SIG-5x1000-2M',
+                   slurm_params={'time': '23:30:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 120000},
+                   train_flags=['sig'],
+                   train_params={'num-events': 2000000, 'c6': [-20,20,2001], 'epochs': 100, 'batch-size': 32, 'learning-rate': 1e-5, 'num-layers': 5, 'num-nodes': 1000})
+    ]
+
+    joblist = [
+        define_job('train-SIG-5x1000-100k',
+                   slurm_params={'time': '23:30:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
+                   train_flags=['sig'],
+                   train_params={'num-events': 100000, 'c6': [-20,20,11], 'epochs': 100, 'batch-size': 32, 'learning-rate': 1e-5, 'num-layers': 5, 'num-nodes': 1000}),
+        define_job('train-SIG-2x100-100k',
+                   slurm_params={'time': '23:30:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
+                   train_flags=['sig'],
+                   train_params={'num-events': 100000, 'c6': [-20,20,11], 'epochs': 100, 'batch-size': 32, 'learning-rate': 1e-5, 'num-layers': 2, 'num-nodes': 100}),
+        define_job('train-SIG-3x500-100k',
+                   slurm_params={'time': '23:30:00', 'n-cpus': 18, 'n-gpus': 1, 'mem': 60000},
+                   train_flags=['sig'],
+                   train_params={'num-events': 100000, 'c6': [-20,20,11], 'epochs': 100, 'batch-size': 32, 'learning-rate': 1e-5, 'num-layers': 3, 'num-nodes': 500})
+    ]
+
     for job in joblist:
         submit_job(job)
         print('Starting job', job)
