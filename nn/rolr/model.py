@@ -4,6 +4,9 @@ from tensorflow import keras
 import os
 import numpy as np
 
+@keras.utils.register_keras_serializable()
+def ALICE(y_true, y_pred):
+    return -1/(1 + y_true) * tf.math.log(1/(1 + y_pred)) - y_true/(1 + y_true) * tf.math.log(y_pred/(1 + y_pred))
 
 @keras.utils.register_keras_serializable()
 def swish_activation(x, b=1):
@@ -56,7 +59,7 @@ def build(config, strategy=None):
                 epsilon=1e-07
             )
 
-            model.compile(optimizer=optimizer, loss='mean_squared_error')
+            model.compile(optimizer=optimizer, loss=ALICE)
     else:
         if len(config['c6_values']) == 1:
             model = ROLR_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=9)
@@ -70,7 +73,7 @@ def build(config, strategy=None):
             epsilon=1e-07
         )
 
-        model.compile(optimizer=optimizer, loss='mean_squared_error')
+        model.compile(optimizer=optimizer, loss=ALICE)
     
     return model
 
@@ -99,4 +102,4 @@ def save(model, history_callback):
         hist_file.write(str(history_callback.history['val_loss']))
 
 def load(model_path):
-    return keras.models.load_model(model_path, custom_objects={'ROLR_reg': ROLR_reg, 'swish_activation': swish_activation})
+    return keras.models.load_model(model_path, custom_objects={'ROLR_reg': ROLR_reg, 'swish_activation': swish_activation, 'ALICE': ALICE})
