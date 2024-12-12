@@ -99,3 +99,6 @@ def save(model, history_callback):
     with open(os.path.join('.', 'history.txt'), 'w') as hist_file:
         hist_file.write(str(history_callback.history['loss']))
         hist_file.write(str(history_callback.history['val_loss']))
+
+def load(model_path):
+    return keras.models.load_model(model_path, custom_objects={'CARL_clf': CARL_clf, 'swish_activation': swish_activation})
