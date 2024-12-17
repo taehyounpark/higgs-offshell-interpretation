@@ -21,11 +21,12 @@ def get_component(config):
 
     return comp_dict[component]
 
-def build_dataset(x_arr, target):
+def build_dataset(x_arr, target, weights):
     inputs = tf.cast(x_arr, tf.float32)
     targets = tf.cast(tf.convert_to_tensor(target[:, tf.newaxis]), tf.float32)
+    weights = tf.cast(tf.convert_to_tensor(weights[:, tf.newaxis]), tf.float32)
 
-    data = tf.concat([inputs, targets], axis=1)
+    data = tf.concat([inputs, targets, weights], axis=1)
 
     return data
 
@@ -62,8 +63,8 @@ def build(config, seed, strategy=None):
 
     set_size = sample.events.kinematics.shape[0]
 
-    sample.events.filter(msq.MSQFilter('msq_bkg_sm', value=0.0))
-    sample.events.filter(msq.MSQFilter('msq_bkg_sm', value=np.nan))
+    sample.events.filter(msq.MSQFilter('msq_int_sm', value=0.0))
+    sample.events.filter(msq.MSQFilter('msq_int_sm', value=np.nan))
 
     kin_vars = load_kinematics(sample)
 
@@ -79,17 +80,19 @@ def build(config, seed, strategy=None):
     coeff = c6_mod.coefficients[:, config['coeff']]
 
     train_data = build_dataset(x_arr = kin_vars[:int(true_size/2)],
-                               target = coeff[:int(true_size/2)])
+                               target = coeff[:int(true_size/2)],
+                               weights = sample.events[:int(true_size/2)].probabilities)
     
     val_data = build_dataset(x_arr = kin_vars[int(true_size/2):],
-                             target = coeff[int(true_size/2):])
+                             target = coeff[int(true_size/2):],
+                             weights = sample.events[int(true_size/2):].probabilities)
     
     # The following will scale only kinematics for nonprm and kinematics + c6 for prm
     train_scaler = MinMaxScaler()
-    train_data = tf.concat([train_scaler.fit_transform(train_data[:,:-1]), train_data[:,-1][:, tf.newaxis]], axis=1)
+    train_data = tf.concat([train_scaler.fit_transform(train_data[:,:-2]), train_data[:,-2:]], axis=1)
     train_data = tf.random.shuffle(train_data, seed=seed)
 
-    val_data = tf.concat([train_scaler.transform(val_data[:,:-1]), val_data[:,-1][:, tf.newaxis]], axis=1)
+    val_data = tf.concat([train_scaler.transform(val_data[:,:-2]), val_data[:,-2:]], axis=1)
     val_data = tf.random.shuffle(val_data, seed=seed)
 
     scaler_config = {'scaler.scale_': train_scaler.scale_.tolist(), 'scaler.min_': train_scaler.min_.tolist()}
@@ -97,8 +100,8 @@ def build(config, seed, strategy=None):
         scaler_file.write(json.dumps(scaler_config, indent=4))
 
     # Build tf Dataset objects and batch data
-    train_dataset = tf.data.Dataset.from_tensor_slices((train_data[:,:-1], train_data[:,-1][:,tf.newaxis]))
-    val_dataset = tf.data.Dataset.from_tensor_slices((val_data[:,:-1], val_data[:,-1][:,tf.newaxis]))
+    train_dataset = tf.data.Dataset.from_tensor_slices((train_data[:,:-2], train_data[:,-2][:,tf.newaxis], train_data[:,-1][:,tf.newaxis]))
+    val_dataset = tf.data.Dataset.from_tensor_slices((val_data[:,:-2], val_data[:,-2][:,tf.newaxis], val_data[:,-1][:,tf.newaxis]))
 
     if 'distributed' in config['flags'] and strategy is not None:
         with strategy.scope():

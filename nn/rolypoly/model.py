@@ -53,7 +53,7 @@ def build(config, strategy=None):
                 epsilon=1e-07
             )
 
-            model.compile(optimizer=optimizer, loss='mean_squared_error')
+            model.compile(optimizer=optimizer, loss='mean_squared_error', weighted_metrics=[])
     else:
         model = ROLYPOLY_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=9)
 
@@ -64,7 +64,7 @@ def build(config, strategy=None):
             epsilon=1e-07
         )
 
-        model.compile(optimizer=optimizer, loss='mean_squared_error')
+        model.compile(optimizer=optimizer, loss='mean_squared_error', weighted_metrics=[])
     
     return model
 
