@@ -5,8 +5,8 @@ import os
 import numpy as np
 
 @keras.utils.register_keras_serializable()
-def ALICE(y_true, y_pred):
-    return -1/(1 + y_true) * tf.math.log(1/(1 + y_pred)) - y_true/(1 + y_true) * tf.math.log(y_pred/(1 + y_pred))
+def ALICE_loss(y_true, y_pred):
+    return - (1-y_true) * tf.math.log(1 - y_pred) - y_true * tf.math.log(y_pred)
 
 @keras.utils.register_keras_serializable()
 def swish_activation(x, b=1):
@@ -15,9 +15,9 @@ def swish_activation(x, b=1):
 keras.utils.get_custom_objects().update({'swish_activation': keras.layers.Activation(swish_activation)})
 
 @keras.utils.register_keras_serializable()
-class ROLR_reg(keras.Model):
+class ALICE_reg(keras.Model):
     def __init__(self, num_layers=10, num_nodes=2000, input_dim=9, **kwargs):
-        super(ROLR_reg, self).__init__(**kwargs)
+        super(ALICE_reg, self).__init__(**kwargs)
         
         swish = keras.layers.Activation(swish_activation, name='Swish')
 
@@ -34,7 +34,7 @@ class ROLR_reg(keras.Model):
         for i in range(1,num_layers):
             self.custom_layers.append(keras.layers.Dense(num_nodes[i], activation=swish, kernel_initializer='he_normal'))
 
-        self.custom_layers.append(keras.layers.Dense(1, kernel_initializer='he_normal'))
+        self.custom_layers.append(keras.layers.Dense(1, activation='sigmoid', kernel_initializer='he_normal'))
 
     def call(self, inputs):
         x = self.custom_layers[0](inputs)
@@ -48,9 +48,9 @@ def build(config, strategy=None):
     if 'distributed' in config['flags'] and strategy is not None:
         with strategy.scope():
             if len(config['c6_values']) == 1:
-                model = ROLR_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=9)
+                model = ALICE_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=9)
             else:
-                model = ROLR_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=10)
+                model = ALICE_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=10)
 
             optimizer = keras.optimizers.Nadam(
                 learning_rate=config['learning_rate'],
@@ -59,12 +59,12 @@ def build(config, strategy=None):
                 epsilon=1e-07
             )
 
-            model.compile(optimizer=optimizer, loss=ALICE)
+            model.compile(optimizer=optimizer, loss=ALICE_loss)
     else:
         if len(config['c6_values']) == 1:
-            model = ROLR_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=9)
+            model = ALICE_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=9)
         else:
-            model = ROLR_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=10)
+            model = ALICE_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=10)
 
         optimizer = keras.optimizers.Nadam(
             learning_rate=config['learning_rate'],
@@ -73,7 +73,7 @@ def build(config, strategy=None):
             epsilon=1e-07
         )
 
-        model.compile(optimizer=optimizer, loss=ALICE)
+        model.compile(optimizer=optimizer, loss=ALICE_loss)
     
     return model
 
@@ -102,4 +102,4 @@ def save(model, history_callback):
         hist_file.write(str(history_callback.history['val_loss']))
 
 def load(model_path):
-    return keras.models.load_model(model_path, custom_objects={'ROLR_reg': ROLR_reg, 'swish_activation': swish_activation, 'ALICE': ALICE})
+    return keras.models.load_model(model_path, custom_objects={'ALICE_reg': ALICE_reg, 'swish_activation': swish_activation, 'ALICE_loss': ALICE_loss})

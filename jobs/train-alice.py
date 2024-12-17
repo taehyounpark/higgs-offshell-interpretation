@@ -7,7 +7,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import tensorflow as tf
 
-from nn.rolr import dataset, model
+from nn.alice import dataset, model
 
 
 SEED=373485

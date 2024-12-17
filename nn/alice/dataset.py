@@ -39,15 +39,17 @@ def build_dataset(x_arr, param_values, signal_probabilities, background_probabil
     for i in range(len(param_values)):
         param = param_values[i]
         # x | param | y | weight
+        ratios = tf.cast(signal_probabilities[:,i][:,tf.newaxis]/background_probabilities[:,tf.newaxis], tf.float32)
+
         if not non_prm:
             inputs = tf.concat([x_arr, tf.ones(x_arr.shape[0])[:,tf.newaxis]*param], axis=1)
-            targets = tf.cast(signal_probabilities[:,i][:,tf.newaxis]/background_probabilities[:,tf.newaxis], tf.float32)
+            targets = ratios/(1+ratios)
             weights = tf.cast(background_probabilities[:,tf.newaxis], tf.float32)
 
             data.append(tf.concat([inputs, targets, weights], axis=1))
         else:
             inputs = x_arr
-            targets = tf.cast(signal_probabilities[:,i][:,tf.newaxis]/background_probabilities[:,tf.newaxis], tf.float32)
+            targets = ratios/(1+ratios)
             weights = tf.cast(background_probabilities[:,tf.newaxis], tf.float32)
 
             data.append(tf.concat([inputs, targets, weights], axis=1))
@@ -104,13 +106,13 @@ def build(config, seed, strategy=None):
 
     if component_1 != msq.Component.BKG:
         c6_mod = c6.Modifier(baseline = component_1, sample=sample_2, c6_values = [-5,-1,0,1,5])
-        sig_weights, sig_prob = c6_mod.modify(c6=config['c6_values'])
+        _, sig_prob = c6_mod.modify(c6=config['c6_values'])
     else:
-        sig_weights, sig_prob = np.array(sample_2.events.weights)[:,np.newaxis], np.array(sample_2.events.probabilities)[:,np.newaxis]
+        _, sig_prob = np.array(sample_2.events.weights)[:,np.newaxis], np.array(sample_2.events.probabilities)[:,np.newaxis]
     
     if component_1 == msq.Component.INT: #TODO: Fix this somehow
         c6_mod = c6.Modifier(baseline = component_1, sample=sample_2, c6_values = [-5,0,5])
-        sig_weights, sig_prob = c6_mod.modify(c6=config['c6_values'])
+        _, sig_prob = c6_mod.modify(c6=config['c6_values'])
 
     train_data = build_dataset(x_arr = kin_vars_2[:int(true_size_2/2)], 
                                param_values = config['c6_values'],
