@@ -23,8 +23,8 @@ def get_component(config):
 
 def build_dataset(x_arr, target, weights):
     inputs = tf.cast(x_arr, tf.float32)
-    targets = tf.cast(tf.convert_to_tensor(target[:, tf.newaxis]), tf.float32)
-    weights = tf.cast(tf.convert_to_tensor(weights[:, tf.newaxis]), tf.float32)
+    targets = tf.cast(tf.convert_to_tensor(target)[:, tf.newaxis], tf.float32)
+    weights = tf.cast(tf.convert_to_tensor(weights)[:, tf.newaxis], tf.float32)
 
     data = tf.concat([inputs, targets, weights], axis=1)
 
