@@ -22,7 +22,7 @@ def get_components(config):
 
     return (comp_dict[component_1], comp_dict[component_2])
 
-def build_dataset(x_arr, param_values, signal_probabilities, background_probabilities):
+def build_dataset(x_arr, param_values, signal_probabilities, background_probabilities, weights):
     data = []
 
     signal_probabilities = tf.convert_to_tensor(signal_probabilities)
@@ -44,13 +44,13 @@ def build_dataset(x_arr, param_values, signal_probabilities, background_probabil
         if not non_prm:
             inputs = tf.concat([x_arr, tf.ones(x_arr.shape[0])[:,tf.newaxis]*param], axis=1)
             targets = ratios/(1+ratios)
-            weights = tf.cast(background_probabilities[:,tf.newaxis], tf.float32)
+            weights = tf.cast(weights, tf.float32)
 
             data.append(tf.concat([inputs, targets, weights], axis=1))
         else:
             inputs = x_arr
             targets = ratios/(1+ratios)
-            weights = tf.cast(background_probabilities[:,tf.newaxis], tf.float32)
+            weights = tf.cast(weights, tf.float32)
 
             data.append(tf.concat([inputs, targets, weights], axis=1))
 
@@ -117,12 +117,14 @@ def build(config, seed, strategy=None):
     train_data = build_dataset(x_arr = kin_vars_2[:int(true_size_2/2)], 
                                param_values = config['c6_values'],
                                signal_probabilities = sig_prob[:int(true_size_2/2)],
-                               background_probabilities = np.array(sample_2.events.probabilities)[:int(true_size_2/2)])
+                               background_probabilities = np.array(sample_2.events.probabilities)[:int(true_size_2/2)],
+                               weights = np.array(sample_2.events.weights)[:int(true_size_2/2)])
     
     val_data = build_dataset(x_arr = kin_vars_2[int(true_size_2/2):],
                              param_values = config['c6_values'],
                              signal_probabilities = sig_prob[int(true_size_2/2):],
-                             background_probabilities = np.array(sample_2.events.probabilities)[int(true_size_2/2):])
+                             background_probabilities = np.array(sample_2.events.probabilities)[int(true_size_2/2):],
+                             weights = np.array(sample_2.events.weights)[int(true_size_2/2):])
     
     # The following will scale only kinematics for nonprm and kinematics + c6 for prm
     train_scaler = MinMaxScaler()
