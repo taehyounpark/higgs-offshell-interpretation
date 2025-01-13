@@ -44,7 +44,7 @@ class ROLYPOLY_reg(keras.Model):
 def build(config, strategy=None):
     if 'distributed' in config['flags'] and strategy is not None:
         with strategy.scope():
-            model = ROLYPOLY_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=9)
+            model = ROLYPOLY_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=16)
 
             optimizer = keras.optimizers.Nadam(
                 learning_rate=config['learning_rate'],
@@ -55,7 +55,7 @@ def build(config, strategy=None):
 
             model.compile(optimizer=optimizer, loss='mean_squared_error', weighted_metrics=[])
     else:
-        model = ROLYPOLY_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=9)
+        model = ROLYPOLY_reg(num_layers=config['num_layers'], num_nodes=config['num_nodes'], input_dim=16)
 
         optimizer = keras.optimizers.Nadam(
             learning_rate=config['learning_rate'],

@@ -7,7 +7,7 @@ import json
 import numpy as np
 import tensorflow as tf
 
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 
 
 def get_component(config):
@@ -53,8 +53,8 @@ def load_sample(config, component):
 def load_kinematics(sample, bounds1=(70,115), bounds2=(70,115), algorithm='leastsquare'):
     z_chooser = zpair.ZPairChooser(bounds1=bounds1, bounds2=bounds2, algorithm=algorithm)
 
-    # calculate_2 uses y4l as additional kinematic
-    return angles.calculate_2(*sample.events.filter(z_chooser))
+    # Return 4-momenta (px, py, pz, E) lepton wise
+    return sample.events.filter(z_chooser)
 
 def build(config, seed, strategy=None):
     component = get_component(config)
@@ -87,15 +87,14 @@ def build(config, seed, strategy=None):
                              target = coeff[int(true_size/2):],
                              weights = sample.events[int(true_size/2):].probabilities)
     
-    # The following will scale only kinematics for nonprm and kinematics + c6 for prm
-    train_scaler = MinMaxScaler()
+    train_scaler = StandardScaler(with_mean=False)
     train_data = tf.concat([train_scaler.fit_transform(train_data[:,:-2]), train_data[:,-2:]], axis=1)
     train_data = tf.random.shuffle(train_data, seed=seed)
 
     val_data = tf.concat([train_scaler.transform(val_data[:,:-2]), val_data[:,-2:]], axis=1)
     val_data = tf.random.shuffle(val_data, seed=seed)
 
-    scaler_config = {'scaler.scale_': train_scaler.scale_.tolist(), 'scaler.min_': train_scaler.min_.tolist()}
+    scaler_config = {'scaler.scale_': train_scaler.scale_.tolist(), 'scaler.mean_': train_scaler.mean_.tolist(), 'scaler.var_': train_scaler.var_.tolist()}
     with open('scaler.json', 'w') as scaler_file:
         scaler_file.write(json.dumps(scaler_config, indent=4))
 
