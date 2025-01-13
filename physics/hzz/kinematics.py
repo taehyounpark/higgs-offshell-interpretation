@@ -13,11 +13,11 @@ class MomentumFilter():
         pz = kinematics[f'{lepton_name}_pz']
         pE = kinematics[f'{lepton_name}_E']
 
-        cond1 = np.where(px >= self.momenta_min[0] & px <= self.momenta_max[0])
-        cond2 = np.where(py >= self.momenta_min[1] & py <= self.momenta_max[1])
-        cond3 = np.where(pz >= self.momenta_min[2] & pz <= self.momenta_max[2])
-        cond4 = np.where(pE >= self.momenta_min[3] & pE <= self.momenta_max[3])
+        cond1 = np.where((px >= self.momenta_min[0]) & (px <= self.momenta_max[0]))
+        cond2 = np.where((py >= self.momenta_min[1]) & (py <= self.momenta_max[1]))
+        cond3 = np.where((pz >= self.momenta_min[2]) & (pz <= self.momenta_max[2]))
+        cond4 = np.where((pE >= self.momenta_min[3]) & (pE <= self.momenta_max[3]))
 
         indices = np.intersect1d(np.intersect1d(np.intersect1d(cond1, cond2), cond3), cond4)
 
-        return indices, None
+        return indices, indices
