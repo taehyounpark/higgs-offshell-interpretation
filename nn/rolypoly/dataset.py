@@ -54,7 +54,8 @@ def load_kinematics(sample, bounds1=(70,115), bounds2=(70,115), algorithm='least
     z_chooser = zpair.ZPairChooser(bounds1=bounds1, bounds2=bounds2, algorithm=algorithm)
 
     # Return 4-momenta (px, py, pz, E) lepton wise
-    return sample.events.filter(z_chooser)
+    leptons = sample.events.filter(z_chooser)
+    return np.array([[el.px,el.py,el.pz,el.E] for el in leptons]).reshape((4*len(leptons),leptons[0].shape[0])).T
 
 def build(config, seed, strategy=None):
     component = get_component(config)
