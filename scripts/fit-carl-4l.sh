@@ -5,10 +5,10 @@
     --data.numerator_events '/ptmp/mpp/taepa/higgs-offshell-interpretation/data/zz4l/qqZZ/analyzed.csv' \
     --data.denominator_events '/ptmp/mpp/taepa/higgs-offshell-interpretation/data/zz4l/ggZZ_sbi/analyzed.csv' \
     --data.sample_size 10_000_000 \
-    --data.batch_size 2048 \
-    --model.learning_rate 2e-5 \
+    --data.batch_size 1024 \
+    --model.learning_rate 1e-4 \
     --model.n_layers 20 \
-    --model.n_nodes 100 \
-    --trainer.devices 8 \
+    --model.n_nodes 1000 \
+    --trainer.devices 4 \
     --trainer.max_epochs 500 \
     --seed_everything 42

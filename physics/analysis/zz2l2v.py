@@ -122,3 +122,5 @@ def analyze(events):
     print(f'DRll cut             | {events_analyzed.weights.sum()} +/- {np.sqrt(np.sum(np.square(events_analyzed.weights)))}')
 
     return events_analyzed
+
+features = ["l1_pt", "l1_eta", "l1_phi", "l1_energy", "l2_pt", "l2_eta", "l2_phi", "l2_energy", "met", "met_phi"]

@@ -38,6 +38,8 @@ def load_results(output_dir, eft_terms):
     first_dir = os.path.join(output_dir, folder_name(*eft_terms[0]))
     with open(os.path.join(first_dir, 'events_train.pkl'), 'rb') as f:
         events_train = pickle.load(f)
+    with open(os.path.join(first_dir, 'events_val.pkl'), 'rb') as f:
+        events_val = pickle.load(f)
     with open(os.path.join(first_dir, 'events_test.pkl'), 'rb') as f:
         events_test = pickle.load(f)
     with open(os.path.join(first_dir, 'scaler_X.pkl'), 'rb') as f:
@@ -74,12 +76,12 @@ def load_results(output_dir, eft_terms):
         models[n][m][l] = model
         scalers_y[n][m][l] = scaler_y
 
-    return (events_train, events_test), scaler_x, models, scalers_y
+    return (events_val, events_test), scaler_x, models, scalers_y
 
 def get_coefficients(events, features, scaler_X, models, scalers_y):
-    trainer = L.Trainer(accelerator='gpu', devices=1)
+    trainer = L.Trainer(accelerator='gpu', devices=1, enable_progress_bar=False)
     X = scaler_X.transform(events.kinematics[features].to_numpy())
-    dl = DataLoader(TensorDataset(torch.tensor(X,dtype=torch.float32)), batch_size=1024, num_workers=1)
+    dl = DataLoader(TensorDataset(torch.tensor(X,dtype=torch.float32)), batch_size=128, num_workers=1)
 
     coeffs = [[[None for _ in k] for k in j] for j in models]
 

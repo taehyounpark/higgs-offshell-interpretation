@@ -13,10 +13,10 @@ def load_results(output_dir):
     carl_dir = os.path.join(output_dir, 'carl')
     logs_dir = os.path.join(carl_dir, 'lightning_logs')
 
-    with open(os.path.join(carl_dir, 'events_numerator_train.pkl'), 'rb') as f:
-        events_num_train = pickle.load(f)
-    with open(os.path.join(carl_dir, 'events_denominator_train.pkl'), 'rb') as f:
-        events_denom_train = pickle.load(f)
+    with open(os.path.join(carl_dir, 'events_numerator_val.pkl'), 'rb') as f:
+        events_num_val = pickle.load(f)
+    with open(os.path.join(carl_dir, 'events_denominator_val.pkl'), 'rb') as f:
+        events_denom_val = pickle.load(f)
     with open(os.path.join(carl_dir, 'events_numerator_test.pkl'), 'rb') as f:
         events_num_test = pickle.load(f)
     with open(os.path.join(carl_dir, 'events_denominator_test.pkl'), 'rb') as f:
@@ -43,14 +43,14 @@ def load_results(output_dir):
 
     ckpt = CARL.load_from_checkpoint(checkpoint_path=os.path.join(checkpoint_dir, ckpt_path))
 
-    return (events_num_train, events_num_test), (events_denom_train, events_denom_test), scaler, ckpt
+    return (events_num_val, events_num_test), (events_denom_val, events_denom_test), scaler, ckpt
 
 def get_likelihood_ratio(events, features, scaler_X, model):
-    trainer = L.Trainer(accelerator='gpu', devices=1)
+    trainer = L.Trainer(accelerator='gpu', devices=1, enable_progress_bar=False)
 
     kinematics = events.kinematics[features]
     X_carl = scaler_X.transform(kinematics.to_numpy())
-    dl_carl = DataLoader(TensorDataset(torch.tensor(X_carl, dtype=torch.float32)), batch_size=1024, num_workers=1) 
+    dl_carl = DataLoader(TensorDataset(torch.tensor(X_carl, dtype=torch.float32)), batch_size=128, num_workers=1) 
     s_carl = torch.cat(trainer.predict(model, dl_carl))
 
     return s_carl/(1-s_carl)

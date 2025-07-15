@@ -4,6 +4,7 @@ __pycache__/
 data/
 run/
 jobs/
+slang/
 
 **/lightning_logs/
 **/checkpoints/
