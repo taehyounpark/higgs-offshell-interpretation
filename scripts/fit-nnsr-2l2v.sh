@@ -1,0 +1,12 @@
+ python -m nsbi.nnsr fit \
+    --data.features '["l1_pt", "l1_eta", "l1_phi", "l1_energy", "l2_pt", "l2_eta", "l2_phi", "l2_energy", "met", "met_phi"]' \
+    --data.signal_events '/ptmp/mpp/taepa/higgs-offshell-interpretation/data/zz2l2v/ggZZ_sig/analyzed.csv' \
+    --data.background_events '/ptmp/mpp/taepa/higgs-offshell-interpretation/data/*l*v/qq*/analyzed.csv' \
+    --data.sample_size 10_000_000 \
+    --data.batch_size 2048 \
+    --model.learning_rate 1e-4 \
+    --model.n_layers 10 \
+    --model.n_nodes 10 \
+    --trainer.devices 2 \
+    --trainer.max_epochs 500 \
+    --seed_everything 42
